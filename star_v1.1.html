@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<!-- saved from url=(0156)file:///C:/Users/30117/Documents/Codex/2026-09-21/ahxq9gp9vab9sw7mep4/outputs/%E6%98%9F%E9%80%94_%E5%A8%B1%E4%B9%90%E5%9C%88%E6%A8%A1%E6%8B%9F%E5%99%A8.html -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b10">
+  <meta name="description" content="星途 v1.1：可接入兼容 OpenAI API 的娱乐圈互动文字模拟器，支持剧情分支、角色成长、章节目录与本地存档。">
+  <title>星途 · 娱乐圈模拟器 v1.1</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='13' fill='%23090b10'/%3E%3Cpath d='M16 16h32v8H16zm4 13h24l-3 21H23z' fill='%23ee384c'/%3E%3Cpath d='M21 16l7 8m8-8l7 8' stroke='%23fff3e4' stroke-width='4'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #090b10;
+      --panel: #11141b;
+      --panel-2: #171a22;
+      --paper: #f4ecdf;
+      --ink: #151316;
+      --text: #f5f1e9;
+      --muted: #9b9da5;
+      --line: rgba(255,255,255,.12);
+      --red: #ef3f51;
+      --red-dark: #aa2535;
+      --gold: #d9b46d;
+      --cyan: #73d2d7;
+      --shadow: 0 22px 70px rgba(0,0,0,.35);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 78% -10%, rgba(239,63,81,.18), transparent 32rem),
+        linear-gradient(120deg, transparent 0 48%, rgba(255,255,255,.018) 49% 50%, transparent 51%) 0 0/42px 42px,
+        var(--bg);
+      font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(115,210,215,.38);
+      outline-offset: 2px;
+    }
+    ::selection { background: var(--red); color: #fff; }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .05;
+      z-index: 30;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 10px clamp(16px, 4vw, 52px);
+      background: rgba(9,11,16,.88);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: max-content; }
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      background: var(--red);
+      color: white;
+      transform: rotate(-3deg);
+      font-family: Georgia, serif;
+      font-size: 22px;
+      font-weight: 800;
+      box-shadow: 4px 4px 0 #50131d;
+    }
+    .brand-name { font-family: STKaiti, KaiTi, serif; font-size: 1.35rem; font-weight: 800; letter-spacing: .16em; line-height: 1; }
+    .brand-sub { display: block; margin-top: 4px; color: var(--muted); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; }
+    .top-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      color: #c5c7ce;
+      font-size: .78rem;
+      letter-spacing: .04em;
+    }
+    .mode-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #737783; box-shadow: 0 0 0 3px rgba(115,119,131,.12); }
+    .mode-badge.live::before { background: var(--cyan); box-shadow: 0 0 0 3px rgba(115,210,215,.13), 0 0 14px rgba(115,210,215,.5); }
+
+    .btn {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      padding: 8px 14px;
+      background: rgba(255,255,255,.035);
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.23); }
+    .btn:disabled { cursor: not-allowed; opacity: .48; }
+    .btn-primary { background: var(--red); border-color: var(--red); color: white; font-weight: 800; }
+    .btn-primary:hover:not(:disabled) { background: #ff5365; border-color: #ff5365; }
+    .btn-quiet { border-color: transparent; background: transparent; color: #c4c5ca; }
+    .btn-small { min-height: 34px; padding: 5px 10px; font-size: .85rem; }
+
+    main { width: min(1480px, 100%); margin: 0 auto; }
+    .setup-view { padding: clamp(24px, 5vw, 66px) clamp(16px, 5vw, 72px) 70px; }
+    .setup-heading {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, .55fr);
+      gap: 36px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+    .eyebrow { color: var(--red); font-weight: 900; letter-spacing: .16em; text-transform: uppercase; font-size: .78rem; }
+    h1 {
+      max-width: 790px;
+      margin: 8px 0 4px;
+      font: 800 clamp(2.4rem, 7vw, 5.8rem)/.98 STKaiti, KaiTi, Georgia, serif;
+      letter-spacing: -.035em;
+    }
+    h1 em { color: var(--red); font-style: normal; }
+    .lede { max-width: 580px; margin: 0; color: #b8bac1; font-size: 1rem; }
+    .issue-note {
+      position: relative;
+      padding: 18px 20px 16px 28px;
+      color: #cac9c6;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-family: STKaiti, KaiTi, serif;
+      font-size: 1.06rem;
+    }
+    .issue-note::before { content: "“"; position: absolute; left: 0; top: 0; color: var(--red); font: 42px Georgia, serif; }
+
+    .setup-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 18px; align-items: start; }
+    .form-card, .setup-aside {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: rgba(17,20,27,.86);
+      box-shadow: var(--shadow);
+    }
+    .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+    .card-head h2 { margin: 0; font-family: STKaiti, KaiTi, serif; font-size: 1.45rem; }
+    .card-index { color: var(--red); font: 700 .78rem/1 ui-monospace, monospace; letter-spacing: .14em; }
+    .form-body { padding: 22px; }
+    .section-title { margin: 2px 0 14px; color: var(--gold); font-size: .78rem; text-transform: uppercase; letter-spacing: .15em; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .field-grid + .section-title { margin-top: 28px; }
+    .field.full { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 7px; color: #d8d7d4; font-size: .88rem; font-weight: 700; }
+    .optional { color: #777b85; font-weight: 400; }
+    input, select, textarea {
+      width: 100%;
+      color: var(--text);
+      background: #0c0f15;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 3px;
+      padding: 11px 12px;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    input:hover, select:hover, textarea:hover { border-color: rgba(255,255,255,.28); }
+    input:focus, select:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(115,210,215,.09); }
+    textarea { resize: vertical; min-height: 86px; }
+    .field-hint { display: block; margin-top: 6px; color: #777b85; font-size: .76rem; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+    .tag {
+      border: 1px solid rgba(255,255,255,.14);
+      background: transparent;
+      color: #adafb7;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: .82rem;
+    }
+    .tag[aria-pressed="true"] { border-color: var(--red); color: white; background: rgba(239,63,81,.18); }
+    .radio-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .radio-strip input { position: absolute; opacity: 0; pointer-events: none; }
+    .radio-strip label { margin: 0; padding: 9px 8px; text-align: center; border: 1px solid var(--line); cursor: pointer; font-size: .82rem; font-weight: 500; }
+    .radio-strip input:checked + label { border-color: var(--red); background: rgba(239,63,81,.15); color: white; }
+
+    .setup-aside { position: sticky; top: 88px; }
+    .aside-block { padding: 20px; border-bottom: 1px solid var(--line); }
+    .aside-block:last-child { border-bottom: 0; }
+    .aside-block h3 { margin: 0 0 9px; font-family: STKaiti, KaiTi, serif; font-size: 1.1rem; }
+    .aside-block p { margin: 0; color: #9c9fa7; font-size: .86rem; }
+    .start-btn { width: 100%; min-height: 56px; margin-top: 16px; font-size: 1rem; letter-spacing: .08em; }
+    .demo-note { display: flex; gap: 10px; align-items: flex-start; }
+    .demo-note b { flex: 0 0 auto; display: grid; place-items: center; width: 24px; height: 24px; color: var(--bg); background: var(--gold); border-radius: 50%; font-size: .8rem; }
+
+    .game-view { display: none; min-height: calc(100vh - 69px); }
+    .game-view.active { display: grid; grid-template-columns: 300px minmax(0, 1fr); }
+    .dossier {
+      position: sticky;
+      top: 69px;
+      height: calc(100vh - 69px);
+      overflow: auto;
+      padding: 24px 20px 34px;
+      background: #0d1016;
+      border-right: 1px solid var(--line);
+    }
+    .dossier-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .dossier-title h2 { margin: 0; font-family: STKaiti, KaiTi, serif; font-size: 1.4rem; }
+    .file-no { color: #6f737d; font: .72rem ui-monospace, monospace; }
+    .profile-card { position: relative; padding: 17px; margin-bottom: 22px; background: var(--paper); color: var(--ink); transform: rotate(-.5deg); box-shadow: 8px 10px 0 rgba(239,63,81,.16); }
+    .profile-card::after { content: "CONFIDENTIAL"; position: absolute; top: 10px; right: 8px; color: rgba(170,37,53,.28); border: 2px solid rgba(170,37,53,.22); padding: 1px 5px; font: 700 .62rem ui-monospace, monospace; transform: rotate(5deg); }
+    .profile-avatar { width: 56px; height: 64px; display: grid; place-items: center; margin-bottom: 9px; background: #1d2028; color: var(--paper); font: 800 1.55rem STKaiti, KaiTi, serif; }
+    .profile-name { margin: 0; font: 900 1.35rem STKaiti, KaiTi, serif; }
+    .profile-line { margin: 3px 0 0; color: #59535a; font-size: .78rem; }
+    .profile-desc { margin: 11px 0 0; padding-top: 10px; border-top: 1px dashed #b6ab9d; font-size: .78rem; line-height: 1.5; }
+    .side-section { margin-top: 22px; }
+    .side-section h3 { margin: 0 0 12px; color: #82858e; font: 700 .72rem ui-monospace, monospace; letter-spacing: .14em; text-transform: uppercase; }
+    .stat { margin-bottom: 12px; }
+    .stat-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; color: #c9c9c8; font-size: .8rem; }
+    .stat-line strong { color: white; font-family: ui-monospace, monospace; }
+    .stat-track { height: 4px; background: #292c34; overflow: hidden; }
+    .stat-fill { height: 100%; width: 30%; background: var(--red); transition: width .6s cubic-bezier(.2,.8,.2,1); }
+    .stat:nth-child(2n) .stat-fill { background: var(--gold); }
+    .contacts { display: grid; gap: 9px; }
+    .contact { display: grid; grid-template-columns: 34px 1fr auto; gap: 9px; align-items: center; padding: 8px; background: #151820; border-left: 2px solid #343841; }
+    .contact-icon { display: grid; place-items: center; width: 32px; height: 32px; background: #222630; color: var(--gold); font: 700 .9rem STKaiti, KaiTi, serif; }
+    .contact b { display: block; font-size: .82rem; }
+    .contact small { display: block; color: #787b84; font-size: .7rem; }
+    .contact em { color: var(--cyan); font: normal .75rem ui-monospace, monospace; }
+    .dossier-mobile { display: none; }
+
+    .story-shell { min-width: 0; padding: 26px clamp(16px, 4vw, 58px) 76px; }
+    .story-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 22px; }
+    .scene-meta { color: #858892; font: .76rem ui-monospace, monospace; letter-spacing: .08em; }
+    .story-status { display: inline-flex; align-items: center; gap: 7px; color: #858892; font-size: .78rem; }
+    .story-status i { width: 7px; height: 7px; border-radius: 50%; background: #737783; }
+    .story-status.loading i { background: var(--red); animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: .25; transform: scale(.75); } }
+    .story-stream { max-width: 900px; margin: 0 auto; }
+    .chapter { margin-bottom: 44px; animation: rise .5s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(13px); } }
+    .chapter-head { display: grid; grid-template-columns: 86px 1fr; gap: 20px; align-items: start; margin-bottom: 20px; }
+    .chapter-no { padding-top: 5px; color: var(--red); border-top: 3px solid var(--red); font: 800 .76rem ui-monospace, monospace; letter-spacing: .08em; }
+    .chapter-title { margin: 0; font: 800 clamp(1.8rem, 4vw, 3rem)/1.18 STKaiti, KaiTi, serif; }
+    .chapter-sub { margin: 4px 0 0; color: #7f828b; font-size: .82rem; }
+    .story-paper { position: relative; padding: clamp(22px, 4vw, 46px); color: #282329; background: var(--paper); box-shadow: var(--shadow); }
+    .story-paper::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .22; background: repeating-linear-gradient(0deg, transparent 0 27px, rgba(71,61,57,.12) 28px); }
+    .story-paper p { position: relative; margin: 0 0 1.25em; font-family: STSong, SimSun, serif; font-size: clamp(1rem, 2vw, 1.08rem); line-height: 2; text-align: justify; text-indent: 2em; }
+    .story-paper p:first-child::first-letter { float: left; margin: .12em .12em 0 0; color: var(--red-dark); font: 800 3.4rem/.8 STKaiti, KaiTi, serif; }
+    .choice-summary { margin: 0 0 16px 106px; padding: 10px 14px; border-left: 2px solid var(--gold); color: #a9aab0; background: rgba(217,180,109,.07); font-size: .82rem; }
+    .choices-panel { max-width: 900px; margin: -14px auto 0; }
+    .choices-label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: #8a8d96; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; }
+    .choices-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .choice {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      min-height: 74px;
+      align-items: center;
+      padding: 12px 14px;
+      text-align: left;
+      border: 1px solid rgba(255,255,255,.13);
+      background: #12151c;
+      cursor: pointer;
+      transition: border-color .18s ease, transform .18s ease, background .18s ease;
+    }
+    .choice:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--red); background: #19171e; }
+    .choice:disabled { opacity: .45; cursor: not-allowed; }
+    .choice-key { display: grid; place-items: center; width: 30px; height: 30px; background: var(--red); color: white; font: 800 .82rem ui-monospace, monospace; }
+    .choice b { display: block; font-size: .9rem; }
+    .choice small { display: block; margin-top: 2px; color: #777b85; font-size: .72rem; line-height: 1.4; }
+    .custom-action { display: grid; grid-template-columns: 1fr auto; gap: 9px; margin-top: 10px; }
+    .custom-action textarea { min-height: 66px; max-height: 180px; }
+    .custom-action .btn { min-width: 110px; }
+    .key-hint { margin: 7px 0 0; color: #666a74; font-size: .72rem; text-align: right; }
+    .loading-card { padding: 28px; border: 1px solid var(--line); background: #11141b; }
+    .loading-line { height: 9px; margin: 12px 0; background: linear-gradient(90deg, #242832 25%, #343946 50%, #242832 75%); background-size: 200% 100%; animation: shimmer 1.3s infinite; }
+    .loading-line:nth-child(2) { width: 86%; }
+    .loading-line:nth-child(3) { width: 66%; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .backdrop { position: fixed; inset: 0; z-index: 39; display: none; background: rgba(0,0,0,.66); backdrop-filter: blur(4px); }
+    .backdrop.open { display: block; }
+    .drawer {
+      position: fixed;
+      z-index: 40;
+      top: 0;
+      right: 0;
+      width: min(480px, 100%);
+      height: 100vh;
+      overflow: auto;
+      padding: 24px;
+      background: #11141b;
+      border-left: 1px solid var(--line);
+      box-shadow: -30px 0 80px rgba(0,0,0,.55);
+      transform: translateX(102%);
+      transition: transform .28s ease;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer-head { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 25px; }
+    .drawer-head h2 { margin: 0; font: 800 1.8rem STKaiti, KaiTi, serif; }
+    .drawer-head p { margin: 5px 0 0; color: #83868f; font-size: .82rem; }
+    .drawer .field { margin-bottom: 16px; }
+    .input-group { display: grid; grid-template-columns: 1fr auto; }
+    .input-group input, .input-group select { border-right: 0; }
+    .input-group .btn { border-radius: 0; }
+    .api-actions { display: flex; gap: 9px; margin: 20px 0; }
+    .api-actions .btn-primary { flex: 1; }
+    .api-note { padding: 13px; color: #a4a6ad; background: #0b0e13; border-left: 3px solid var(--gold); font-size: .78rem; }
+    .switch-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .switch-line span { font-size: .85rem; }
+    .switch { position: relative; width: 44px; height: 24px; flex: 0 0 auto; }
+    .switch input { position: absolute; opacity: 0; }
+    .switch i { display: block; width: 44px; height: 24px; background: #30333c; border-radius: 99px; cursor: pointer; }
+    .switch i::after { content: ""; display: block; width: 18px; height: 18px; margin: 3px; background: white; border-radius: 50%; transition: transform .2s ease; }
+    .switch input:checked + i { background: var(--red); }
+    .switch input:checked + i::after { transform: translateX(20px); }
+
+    .modal { position: fixed; inset: 0; z-index: 50; display: none; place-items: center; padding: 20px; background: rgba(0,0,0,.72); }
+    .modal.open { display: grid; }
+    .modal-card { width: min(460px, 100%); padding: 24px; background: #151820; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .modal-card h2 { margin: 0 0 8px; font-family: STKaiti, KaiTi, serif; }
+    .modal-card p { margin: 0 0 20px; color: #a2a4ac; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .toast-stack { position: fixed; z-index: 60; right: 20px; bottom: 20px; display: grid; gap: 8px; width: min(360px, calc(100% - 40px)); }
+    .toast { padding: 12px 14px; background: #20242d; border-left: 3px solid var(--cyan); box-shadow: var(--shadow); animation: toastIn .25s ease both; font-size: .86rem; }
+    .toast.error { border-color: var(--red); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 980px) {
+      .setup-heading { grid-template-columns: 1fr; }
+      .issue-note { max-width: 620px; }
+      .setup-grid { grid-template-columns: 1fr; }
+      .setup-aside { position: static; }
+      .game-view.active { grid-template-columns: 1fr; }
+      .dossier { display: none; position: fixed; z-index: 35; top: 69px; left: 0; width: min(320px, 88vw); box-shadow: 30px 0 70px rgba(0,0,0,.6); }
+      .dossier.open { display: block; }
+      .dossier-mobile { display: inline-flex; }
+    }
+    @media (max-width: 680px) {
+      body { overflow-x: hidden; }
+      .brand-sub, .mode-badge, #saveBtn { display: none; }
+      .topbar { padding: 9px 12px; }
+      .brand-name { font-size: 1.1rem; }
+      .brand-mark { width: 36px; height: 36px; }
+      .top-actions { flex-wrap: nowrap; }
+      .top-actions .btn { padding: 7px 10px; font-size: .82rem; }
+      .setup-view { padding-top: 30px; }
+      .setup-heading, .setup-grid, .field-grid { grid-template-columns: minmax(0, 1fr); }
+      .card-head { align-items: flex-start; }
+      .card-index { max-width: 110px; text-align: right; overflow-wrap: anywhere; }
+      .field.full { grid-column: auto; }
+      .radio-strip { grid-template-columns: 1fr; }
+      .chapter-head { grid-template-columns: 1fr; gap: 5px; }
+      .chapter-no { width: max-content; }
+      .choice-summary { margin-left: 0; }
+      .choices { grid-template-columns: 1fr; }
+      .custom-action { grid-template-columns: 1fr; }
+      .custom-action .btn { min-height: 48px; }
+      .story-shell { padding-top: 18px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+  <style id="visual-refresh">
+    :root {
+      --bg: #090d18;
+      --panel: #121827;
+      --panel-2: #171e30;
+      --paper: #f7f6f2;
+      --ink: #202331;
+      --text: #f5f7fb;
+      --muted: #929bb0;
+      --line: rgba(169,181,211,.14);
+      --red: #7c8cff;
+      --red-dark: #5768dc;
+      --gold: #e6c98d;
+      --cyan: #62d3c6;
+      --shadow: 0 28px 70px rgba(0,0,0,.26);
+      --radius: 18px;
+    }
+
+    html { background: var(--bg); }
+    body {
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(124,140,255,.14), transparent 30rem),
+        radial-gradient(circle at 88% 14%, rgba(98,211,198,.08), transparent 28rem),
+        linear-gradient(180deg, #0b1020 0%, #090d18 42%, #080b13 100%);
+      font-family: Inter, "SF Pro Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.65;
+    }
+    .grain { display: none; }
+
+    .topbar {
+      min-height: 72px;
+      padding: 12px clamp(18px, 4vw, 60px);
+      background: rgba(9,13,24,.78);
+      border-bottom-color: rgba(169,181,211,.1);
+      backdrop-filter: blur(24px) saturate(140%);
+    }
+    .brand { gap: 11px; }
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      background: linear-gradient(145deg, #8996ff, #6072eb);
+      box-shadow: 0 8px 22px rgba(88,105,225,.35), inset 0 1px rgba(255,255,255,.28);
+      transform: none;
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 800;
+    }
+    .brand-name { font-family: inherit; font-size: 1.08rem; font-weight: 750; letter-spacing: .08em; }
+    .brand-sub { margin-top: 1px; color: #69738b; font-size: .65rem; letter-spacing: .16em; }
+    .mode-badge {
+      padding: 7px 11px;
+      border: 0;
+      border-radius: 99px;
+      color: #aeb6c9;
+      background: rgba(255,255,255,.055);
+    }
+    .btn {
+      min-height: 40px;
+      padding: 8px 15px;
+      border-color: rgba(169,181,211,.15);
+      border-radius: 10px;
+      background: rgba(255,255,255,.045);
+    }
+    .btn:hover:not(:disabled) { background: rgba(255,255,255,.09); border-color: rgba(169,181,211,.3); transform: translateY(-1px); }
+    .btn-primary {
+      border-color: transparent;
+      background: linear-gradient(135deg, #8593ff, #6678ee);
+      box-shadow: 0 10px 26px rgba(87,104,220,.24);
+    }
+    .btn-primary:hover:not(:disabled) { border-color: transparent; background: linear-gradient(135deg, #93a0ff, #7182f4); }
+
+    main { width: min(1440px, 100%); }
+    .setup-view { padding: clamp(28px, 5vw, 64px) clamp(18px, 5vw, 72px) 80px; }
+    .setup-heading {
+      grid-template-columns: minmax(0, 1.3fr) minmax(270px, .55fr);
+      gap: 46px;
+      width: min(1160px, 100%);
+      margin: 0 auto 34px;
+      align-items: center;
+    }
+    .eyebrow { color: #9ca8ff; font-size: .74rem; letter-spacing: .12em; }
+    h1 {
+      max-width: 700px;
+      margin: 11px 0 14px;
+      font-family: inherit;
+      font-size: clamp(2.4rem, 5vw, 4.4rem);
+      font-weight: 780;
+      line-height: 1.05;
+      letter-spacing: -.055em;
+    }
+    h1 em {
+      color: transparent;
+      background: linear-gradient(90deg, #aab3ff 0%, #74d9cf 85%);
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+    .lede { max-width: 620px; color: #9ba4b8; font-size: 1rem; }
+    .issue-note {
+      padding: 22px 22px 22px 24px;
+      color: #b7bece;
+      border: 1px solid rgba(169,181,211,.12);
+      border-radius: 16px;
+      background: linear-gradient(140deg, rgba(124,140,255,.09), rgba(255,255,255,.025));
+      font-family: inherit;
+      font-size: .92rem;
+      line-height: 1.75;
+    }
+    .issue-note::before { display: none; }
+
+    .setup-grid {
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 20px;
+      width: min(1160px, 100%);
+      margin: 0 auto;
+    }
+    .form-card, .setup-aside {
+      border-color: rgba(169,181,211,.12);
+      border-radius: 22px;
+      background: rgba(18,24,39,.82);
+      box-shadow: 0 24px 70px rgba(0,0,0,.19);
+      backdrop-filter: blur(16px);
+    }
+    .card-head { padding: 22px 26px; border-bottom-color: rgba(169,181,211,.1); }
+    .card-head h2 { font-family: inherit; font-size: 1.16rem; font-weight: 700; letter-spacing: -.02em; }
+    .card-index { color: #69738a; font-size: .7rem; letter-spacing: .08em; }
+    .form-body { padding: 26px; }
+    .section-title {
+      margin: 2px 0 16px;
+      color: #aeb7c9;
+      font-size: .76rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .field-grid { gap: 18px 16px; }
+    label { margin-bottom: 7px; color: #cbd1df; font-size: .86rem; font-weight: 600; }
+    .optional { color: #6e778d; }
+    input, select, textarea {
+      color: #eff2f8;
+      background: rgba(6,10,19,.48);
+      border-color: rgba(169,181,211,.16);
+      border-radius: 10px;
+      padding: 12px 13px;
+    }
+    input:hover, select:hover, textarea:hover { border-color: rgba(169,181,211,.32); }
+    input:focus, select:focus, textarea:focus { border-color: #8190f7; box-shadow: 0 0 0 4px rgba(124,140,255,.11); }
+    .tag-row { gap: 7px; }
+    .tag {
+      border-color: rgba(169,181,211,.14);
+      border-radius: 99px;
+      background: rgba(255,255,255,.025);
+      color: #929bb0;
+      padding: 6px 11px;
+    }
+    .tag[aria-pressed="true"] { border-color: rgba(124,140,255,.58); color: #dce0ff; background: rgba(124,140,255,.12); }
+    .radio-strip { padding: 4px; gap: 4px; border-radius: 12px; background: rgba(6,10,19,.48); }
+    .radio-strip label { padding: 9px 8px; border: 0; border-radius: 8px; color: #868fa4; }
+    .radio-strip input:checked + label { border: 0; color: #f2f4ff; background: #252e52; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+
+    .setup-aside { top: 92px; overflow: hidden; }
+    .aside-block { padding: 22px; border-bottom-color: rgba(169,181,211,.1); }
+    .aside-block h3 { margin-bottom: 8px; font-family: inherit; font-size: .96rem; font-weight: 700; }
+    .aside-block p { color: #8e97ab; font-size: .84rem; line-height: 1.7; }
+    .demo-note b { width: 24px; height: 24px; color: #101525; background: #e6c98d; }
+    .start-btn { min-height: 52px; border-radius: 12px; letter-spacing: .03em; }
+
+    .game-view.active { grid-template-columns: 286px minmax(0, 1fr); }
+    .dossier {
+      top: 72px;
+      height: calc(100vh - 72px);
+      padding: 27px 20px 34px;
+      background: rgba(12,17,29,.86);
+      border-right-color: rgba(169,181,211,.1);
+      backdrop-filter: blur(20px);
+    }
+    .dossier-title h2 { font-family: inherit; font-size: .96rem; font-weight: 700; }
+    .file-no { color: #5e6880; }
+    .profile-card {
+      padding: 18px;
+      margin-bottom: 26px;
+      color: #eef1f8;
+      background: linear-gradient(145deg, #1d2641 0%, #151c2d 100%);
+      border: 1px solid rgba(169,181,211,.14);
+      border-radius: 17px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.2);
+      transform: none;
+    }
+    .profile-card::after {
+      top: 14px;
+      right: 13px;
+      padding: 2px 7px;
+      color: #7e8cff;
+      border-color: rgba(124,140,255,.28);
+      border-radius: 99px;
+      font-size: .55rem;
+      transform: none;
+    }
+    .profile-avatar {
+      width: 52px;
+      height: 52px;
+      margin-bottom: 12px;
+      border-radius: 14px;
+      color: white;
+      background: linear-gradient(145deg, #8b98ff, #6274eb);
+      font-family: inherit;
+      font-size: 1.2rem;
+    }
+    .profile-name { font-family: inherit; font-size: 1.18rem; font-weight: 750; }
+    .profile-line { color: #a8b0c2; font-size: .75rem; }
+    .profile-desc { border-top-color: rgba(169,181,211,.14); color: #858fa5; }
+    .side-section h3 { color: #667087; font-size: .68rem; letter-spacing: .12em; }
+    .stat-line { color: #aab2c4; }
+    .stat-track { height: 5px; border-radius: 99px; background: #21283a; }
+    .stat-fill { border-radius: 99px; background: linear-gradient(90deg, #6275ed, #8996ff); }
+    .stat:nth-child(2n) .stat-fill { background: linear-gradient(90deg, #b99a5f, #e3c788); }
+    .contact { padding: 9px; border: 0; border-radius: 11px; background: rgba(255,255,255,.035); }
+    .contact-icon { border-radius: 9px; background: #222b42; color: #b9c0ff; font-family: inherit; }
+
+    .story-shell {
+      padding: 28px clamp(20px, 5vw, 76px) 90px;
+      background: radial-gradient(circle at 50% 0, rgba(124,140,255,.06), transparent 38rem);
+    }
+    .story-toolbar { width: min(900px, 100%); margin: 0 auto 24px; }
+    .scene-meta { color: #6f7890; letter-spacing: .04em; }
+    .story-stream, .choices-panel { max-width: 880px; }
+    .chapter { margin-bottom: 50px; scroll-margin-top: 98px; }
+    .chapter-head {
+      grid-template-columns: 72px 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+      align-items: end;
+    }
+    .chapter-no {
+      padding: 0 0 7px;
+      color: #8794ff;
+      border-top: 0;
+      border-bottom: 2px solid #6678ee;
+      font-size: .72rem;
+    }
+    .chapter-title { font-family: inherit; font-size: clamp(1.75rem, 3.5vw, 2.65rem); font-weight: 760; letter-spacing: -.04em; }
+    .chapter-sub { color: #747e94; font-size: .78rem; }
+    .story-paper {
+      padding: clamp(26px, 5vw, 52px);
+      color: #252838;
+      background: linear-gradient(155deg, #faf9f6, #f1f0ec);
+      border: 1px solid rgba(255,255,255,.68);
+      border-radius: 22px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.22), 0 1px 0 rgba(255,255,255,.8) inset;
+    }
+    .story-paper::before { display: none; }
+    .story-paper p {
+      max-width: 720px;
+      margin: 0 auto 1.35em;
+      font-family: "Noto Serif SC", "Songti SC", STSong, SimSun, serif;
+      font-size: clamp(1rem, 1.8vw, 1.075rem);
+      line-height: 2.05;
+      letter-spacing: .015em;
+    }
+    .story-paper p:first-child::first-letter { margin: .13em .12em 0 0; color: #6678ee; font-family: inherit; font-size: 3rem; }
+    .choice-summary {
+      margin: 0 0 18px 90px;
+      padding: 10px 14px;
+      border-left-color: #7384f4;
+      border-radius: 0 8px 8px 0;
+      color: #8f98ab;
+      background: rgba(124,140,255,.075);
+    }
+    .choices-label { color: #727c93; letter-spacing: .08em; }
+    .choices-label::after { background: rgba(169,181,211,.12); }
+    .choices { gap: 10px; }
+    .choice {
+      min-height: 78px;
+      padding: 13px 14px;
+      border-color: rgba(169,181,211,.13);
+      border-radius: 14px;
+      background: rgba(18,24,39,.82);
+      box-shadow: 0 8px 24px rgba(0,0,0,.09);
+    }
+    .choice:hover:not(:disabled) { border-color: rgba(124,140,255,.65); background: #192137; transform: translateY(-2px); }
+    .choice-key {
+      width: 31px;
+      height: 31px;
+      border-radius: 9px;
+      color: #cbd1ff;
+      background: rgba(124,140,255,.15);
+      font-size: .78rem;
+    }
+    .choice b { color: #e8ebf3; font-weight: 650; }
+    .choice small { color: #778198; }
+    .custom-action { padding: 7px; gap: 8px; border: 1px solid rgba(169,181,211,.13); border-radius: 15px; background: rgba(18,24,39,.72); }
+    .custom-action textarea { min-height: 58px; border: 0; background: transparent; box-shadow: none; }
+    .custom-action textarea:focus { box-shadow: none; }
+    .custom-action .btn { min-width: 108px; border-radius: 11px; }
+    .loading-card { border-color: rgba(169,181,211,.12); border-radius: 18px; background: #121827; }
+
+    .drawer {
+      padding: 28px;
+      background: #111827;
+      border-left-color: rgba(169,181,211,.14);
+      box-shadow: -30px 0 90px rgba(0,0,0,.42);
+    }
+    .drawer-head h2, .modal-card h2 { font-family: inherit; font-weight: 750; letter-spacing: -.03em; }
+    .input-group input { border-radius: 10px 0 0 10px; }
+    .input-group .btn { border-radius: 0 10px 10px 0; }
+    .api-note { border-left-color: #e1c27f; border-radius: 8px; background: #0c1220; }
+    .switch input:checked + i { background: #7182f1; }
+    .modal-card { border-color: rgba(169,181,211,.15); border-radius: 18px; background: #151c2c; }
+    .toast { border-left: 0; border-radius: 12px; background: #20283b; box-shadow: 0 18px 48px rgba(0,0,0,.32); }
+    .toast::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: #62d3c6; }
+    .toast.error::before { background: #ff7582; }
+
+    @media (max-width: 980px) {
+      .game-view.active { grid-template-columns: minmax(0, 1fr); }
+      .setup-heading { grid-template-columns: 1fr; gap: 22px; }
+      .setup-grid { grid-template-columns: 1fr; }
+      .setup-aside { display: grid; grid-template-columns: 1fr 1fr; }
+      .aside-block { border-bottom: 0; border-right: 1px solid rgba(169,181,211,.1); }
+      .aside-block:last-child { grid-column: 1 / -1; border-top: 1px solid rgba(169,181,211,.1); border-right: 0; }
+      .dossier { top: 72px; }
+    }
+    @media (max-width: 680px) {
+      .topbar { min-height: 64px; }
+      .brand-mark { width: 35px; height: 35px; border-radius: 10px; }
+      .setup-view { padding: 28px 16px 58px; }
+      .setup-heading { margin-bottom: 24px; }
+      h1 { margin-top: 8px; font-size: clamp(2.25rem, 12vw, 3.25rem); }
+      .issue-note { padding: 17px 18px; }
+      .form-card, .setup-aside { border-radius: 17px; }
+      .card-head, .form-body { padding: 19px; }
+      .setup-aside { display: block; }
+      .aside-block { border-right: 0; border-bottom: 1px solid rgba(169,181,211,.1); }
+      .aside-block:last-child { border-top: 0; }
+      .radio-strip { grid-template-columns: 1fr; }
+      .story-shell { padding: 18px 14px 72px; }
+      .chapter-head { grid-template-columns: 1fr; gap: 7px; }
+      .chapter-no { width: max-content; }
+      .story-paper { padding: 24px 20px; border-radius: 17px; }
+      .story-paper p { line-height: 1.95; }
+      .choice-summary { margin-left: 0; }
+      .choices { gap: 8px; }
+      .custom-action { padding: 6px; }
+      .custom-action .btn { min-height: 46px; }
+    }
+  </style>
+  <style id="v11-experience-refresh">
+    :root {
+      --bg: #070910;
+      --panel: #0f1320;
+      --panel-2: #141a2a;
+      --paper: #171c29;
+      --ink: #eef0f7;
+      --text: #f6f7fb;
+      --muted: #8d95aa;
+      --line: rgba(189,196,225,.12);
+      --red: #8f7cff;
+      --red-dark: #7560ef;
+      --gold: #efc27f;
+      --cyan: #73d8ce;
+      --shadow: 0 28px 90px rgba(0,0,0,.32);
+      --story-width: 900px;
+      --reading-font: 1;
+      --reading-line: 2.02;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 18% -8%, rgba(143,124,255,.15), transparent 30rem),
+        radial-gradient(circle at 88% 8%, rgba(239,194,127,.07), transparent 26rem),
+        radial-gradient(circle at 52% 94%, rgba(115,216,206,.045), transparent 30rem),
+        linear-gradient(180deg, #0a0d17 0%, #070910 46%, #06070c 100%);
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .42;
+      background-image:
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.55), transparent 72%);
+    }
+
+    .topbar {
+      min-height: 70px;
+      padding: 10px clamp(16px, 3vw, 46px);
+      background: rgba(7,9,16,.74);
+      border-bottom-color: rgba(189,196,225,.1);
+      box-shadow: 0 10px 32px rgba(0,0,0,.14);
+    }
+    .brand-mark {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, #a492ff 0%, #7564ef 58%, #5b4cca 100%);
+      box-shadow: 0 10px 30px rgba(117,96,239,.32), inset 0 1px rgba(255,255,255,.34);
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 44px;
+      top: -9px;
+      left: -18px;
+      transform: rotate(28deg);
+      background: rgba(255,255,255,.28);
+    }
+    .brand-name { letter-spacing: .1em; }
+    .brand-sub { color: #70788d; letter-spacing: .14em; }
+    .top-actions { gap: 7px; }
+    .version-pill, .save-status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 9px;
+      border: 1px solid rgba(189,196,225,.11);
+      border-radius: 999px;
+      color: #788197;
+      background: rgba(255,255,255,.025);
+      font: 700 .66rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+    .save-status::before { content: ""; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: #73d8ce; box-shadow: 0 0 12px rgba(115,216,206,.45); }
+
+    .setup-view { padding-top: clamp(34px, 5vw, 72px); }
+    .setup-heading, .setup-grid { width: min(1240px, 100%); }
+    .setup-heading { grid-template-columns: minmax(0, 1.45fr) minmax(280px, .55fr); gap: 52px; margin-bottom: 30px; }
+    .eyebrow { color: #a99cff; }
+    h1 { max-width: 760px; font-size: clamp(2.8rem, 6vw, 5.35rem); font-weight: 790; line-height: .98; }
+    h1 em { background: linear-gradient(92deg, #b5a8ff 2%, #8a7af4 45%, #efc27f 100%); background-clip: text; -webkit-background-clip: text; }
+    .lede { max-width: 670px; color: #9ca5b8; }
+    .issue-note {
+      border-color: rgba(189,196,225,.11);
+      background: linear-gradient(145deg, rgba(143,124,255,.075), rgba(239,194,127,.025));
+      box-shadow: inset 0 1px rgba(255,255,255,.025);
+    }
+    .form-card, .setup-aside {
+      border-color: rgba(189,196,225,.105);
+      background: linear-gradient(180deg, rgba(17,22,35,.9), rgba(12,16,27,.86));
+      box-shadow: 0 30px 80px rgba(0,0,0,.22);
+    }
+    .setup-grid { grid-template-columns: minmax(0, 1fr) 350px; gap: 22px; }
+    .form-card { overflow: hidden; }
+    .form-body { padding: 28px; }
+    .section-title { display: flex; align-items: center; gap: 10px; margin-top: 5px; color: #abb3c4; }
+    .section-title::after { content: ""; height: 1px; flex: 1; background: linear-gradient(90deg, rgba(189,196,225,.12), transparent); }
+    input, select, textarea { background: rgba(4,7,13,.55); border-color: rgba(189,196,225,.14); }
+    .tag { background: rgba(255,255,255,.02); }
+    .tag[aria-pressed="true"] { border-color: rgba(143,124,255,.6); color: #ece9ff; background: rgba(143,124,255,.12); }
+    .radio-strip input:checked + label { background: linear-gradient(135deg, #292c50, #2a304a); }
+
+    .setup-preview-card {
+      position: relative;
+      overflow: hidden;
+      padding: 22px;
+      min-height: 180px;
+      background:
+        radial-gradient(circle at 80% 0, rgba(239,194,127,.13), transparent 12rem),
+        linear-gradient(145deg, #1c2032, #111623);
+    }
+    .setup-preview-card::before {
+      content: "CAST FILE";
+      position: absolute;
+      right: 18px;
+      top: 16px;
+      color: rgba(255,255,255,.1);
+      font: 800 .64rem/1 ui-monospace, monospace;
+      letter-spacing: .17em;
+    }
+    .preview-kicker { color: #7e879c; font-size: .7rem; text-transform: uppercase; letter-spacing: .13em; }
+    .preview-main { display: flex; align-items: center; gap: 14px; margin: 15px 0 13px; }
+    .preview-avatar { width: 54px; height: 54px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 16px; color: #fff; background: linear-gradient(145deg, #a08fff, #6d5de4); box-shadow: 0 10px 24px rgba(111,92,225,.25); font-size: 1.3rem; font-weight: 800; }
+    .preview-name { margin: 0; font-size: 1.1rem; font-weight: 750; }
+    .preview-meta { margin: 4px 0 0; color: #8f98aa; font-size: .78rem; }
+    .preview-traits { display: flex; flex-wrap: wrap; gap: 6px; }
+    .preview-trait { padding: 5px 8px; border: 1px solid rgba(189,196,225,.11); border-radius: 999px; color: #aab2c4; background: rgba(255,255,255,.025); font-size: .7rem; }
+
+    .game-view.active { grid-template-columns: 276px minmax(0, 1fr) 272px; }
+    .dossier { top: 70px; height: calc(100vh - 70px); padding: 24px 18px 34px; background: rgba(9,12,20,.86); }
+    .profile-card { background: linear-gradient(145deg, rgba(34,40,64,.92), rgba(19,24,39,.96)); border-color: rgba(189,196,225,.13); }
+    .profile-card::after { content: "TALENT FILE"; color: #9d91ff; border-color: rgba(143,124,255,.25); }
+    .story-shell { padding: 28px clamp(20px, 4vw, 58px) 94px; min-width: 0; }
+    .story-toolbar, .story-stream, .choices-panel { width: min(var(--story-width), 100%); max-width: none; }
+    .story-toolbar { position: sticky; top: 82px; z-index: 5; padding: 8px 10px; border: 1px solid rgba(189,196,225,.09); border-radius: 12px; background: rgba(10,13,22,.72); backdrop-filter: blur(18px); box-shadow: 0 10px 32px rgba(0,0,0,.12); }
+    .chapter { margin-bottom: 58px; }
+    .chapter-head { grid-template-columns: 70px 1fr; }
+    .chapter-no { color: #9b8eff; border-bottom-color: #7666ef; }
+    .chapter-title { color: #f4f4f9; font-size: clamp(1.75rem, 3vw, 2.55rem); }
+    .chapter-sub { color: #747d91; }
+    .story-paper {
+      position: relative;
+      overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 100% 0, rgba(143,124,255,.06), transparent 20rem),
+        linear-gradient(155deg, rgba(25,30,44,.98), rgba(17,21,32,.98));
+      border: 1px solid rgba(189,196,225,.11);
+      box-shadow: 0 28px 76px rgba(0,0,0,.24), inset 0 1px rgba(255,255,255,.025);
+    }
+    .story-paper::after {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: linear-gradient(180deg, #8f7cff, rgba(239,194,127,.55), transparent 80%);
+    }
+    .story-paper p { color: #dfe3ec; font-size: calc(1.06rem * var(--reading-font)); line-height: var(--reading-line); text-shadow: 0 1px rgba(0,0,0,.18); }
+    .story-paper p:first-child::first-letter { color: #a99dff; }
+    .choice-summary { color: #929aae; background: rgba(143,124,255,.055); border-left-color: #8f7cff; }
+    .chapter-effects { display: flex; flex-wrap: wrap; gap: 7px; margin: 13px 4px 0; }
+    .effect-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid rgba(189,196,225,.1); border-radius: 999px; color: #9fa7ba; background: rgba(255,255,255,.025); font-size: .72rem; }
+    .effect-pill b { color: #dfe3ef; font-weight: 700; }
+    .effect-pill.positive strong { color: #76ded1; }
+    .effect-pill.negative strong { color: #ff8995; }
+    .effect-pill.relationship strong { color: #efc27f; }
+
+    .choices-panel { padding-top: 2px; }
+    .choices-label { margin-bottom: 12px; }
+    .choice { position: relative; overflow: hidden; min-height: 82px; border-color: rgba(189,196,225,.11); background: linear-gradient(145deg, rgba(20,25,40,.92), rgba(14,18,29,.92)); }
+    .choice::after { content: "→"; position: absolute; right: 14px; top: 50%; opacity: 0; transform: translate(-6px,-50%); color: #a99dff; transition: opacity .18s ease, transform .18s ease; }
+    .choice:hover:not(:disabled)::after { opacity: 1; transform: translate(0,-50%); }
+    .choice:hover:not(:disabled) { border-color: rgba(143,124,255,.56); background: linear-gradient(145deg, rgba(29,31,54,.96), rgba(19,23,38,.96)); }
+    .choice-key { color: #d9d4ff; background: rgba(143,124,255,.14); }
+    .custom-action { background: rgba(14,18,29,.9); }
+
+    .intel-rail {
+      position: sticky;
+      top: 70px;
+      height: calc(100vh - 70px);
+      overflow: auto;
+      padding: 24px 16px 34px;
+      border-left: 1px solid rgba(189,196,225,.09);
+      background: rgba(8,11,18,.7);
+      backdrop-filter: blur(18px);
+    }
+    .rail-block { padding: 17px 14px; margin-bottom: 10px; border: 1px solid rgba(189,196,225,.09); border-radius: 15px; background: rgba(255,255,255,.022); }
+    .rail-kicker { margin-bottom: 11px; color: #667087; font: 800 .64rem/1 ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .rail-number { margin: 0; color: #f1f2f8; font-size: 2rem; line-height: 1; letter-spacing: -.06em; }
+    .rail-copy { margin: 7px 0 0; color: #80899d; font-size: .76rem; line-height: 1.55; }
+    .rail-list { display: grid; gap: 7px; }
+    .rail-change { display: flex; justify-content: space-between; gap: 10px; color: #9ca5b8; font-size: .76rem; }
+    .rail-change strong { color: #dfe3ec; font-family: ui-monospace, monospace; }
+    .rail-actions { display: grid; gap: 8px; }
+    .rail-actions .btn { justify-content: flex-start; width: 100%; text-align: left; }
+    .rail-goal { display: flex; gap: 9px; align-items: flex-start; }
+    .rail-goal::before { content: "✦"; color: #efc27f; }
+
+    .tool-drawer { width: min(520px, 100%); }
+    .drawer-section { padding: 18px 0; border-top: 1px solid rgba(189,196,225,.1); }
+    .drawer-section:first-of-type { border-top: 0; padding-top: 0; }
+    .drawer-section h3 { margin: 0 0 11px; color: #e8eaf1; font-size: .9rem; }
+    .chapter-directory { display: grid; gap: 7px; max-height: 330px; overflow: auto; padding-right: 3px; }
+    .directory-item { width: 100%; display: grid; grid-template-columns: 42px 1fr; gap: 10px; align-items: center; padding: 10px; border: 1px solid rgba(189,196,225,.1); border-radius: 11px; color: inherit; background: rgba(255,255,255,.025); text-align: left; cursor: pointer; }
+    .directory-item:hover { border-color: rgba(143,124,255,.45); background: rgba(143,124,255,.06); }
+    .directory-no { color: #8f7cff; font: 800 .7rem/1 ui-monospace, monospace; }
+    .directory-copy b { display: block; color: #dfe3ec; font-size: .82rem; }
+    .directory-copy small { display: block; margin-top: 2px; color: #6f788c; font-size: .68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .setting-row { display: grid; grid-template-columns: 110px 1fr 48px; gap: 10px; align-items: center; margin: 12px 0; }
+    .setting-row label { margin: 0; color: #abb3c3; font-size: .78rem; }
+    .setting-value { color: #7f899e; font: .7rem ui-monospace, monospace; text-align: right; }
+    .drawer-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .drawer-footnote { margin: 9px 0 0; color: #687186; font-size: .7rem; line-height: 1.55; }
+
+    @media (max-width: 1260px) {
+      .game-view.active { grid-template-columns: 276px minmax(0, 1fr); }
+      .intel-rail { display: none; }
+    }
+    @media (max-width: 980px) {
+      .setup-grid { grid-template-columns: 1fr; }
+      .setup-aside { grid-template-columns: 1fr 1fr; }
+      .setup-preview-card { grid-column: 1 / -1; }
+      .game-view.active { grid-template-columns: 1fr; }
+      .story-toolbar { top: 76px; }
+      .intel-rail { display: none; }
+    }
+    @media (max-width: 720px) {
+      .version-pill, .save-status { display: none; }
+      #gameToolsBtn { display: none !important; }
+      .setup-aside { display: block; }
+      .form-body { padding: 20px; }
+      .story-toolbar { position: static; }
+      .chapter-effects { margin-left: 0; }
+      .drawer-actions-grid { grid-template-columns: 1fr; }
+      .setting-row { grid-template-columns: 92px 1fr 42px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="brand" aria-label="星途娱乐圈模拟器">
+      <div class="brand-mark">✦</div>
+      <div><span class="brand-name">星途</span><span class="brand-sub">After the Flash</span></div><span class="version-pill">v1.1</span>
+    </div>
+    <div class="top-actions">
+      <span class="save-status" id="saveStatus" hidden>尚未保存</span>
+      <span class="mode-badge" id="modeBadge">离线试玩</span>
+      <button class="btn btn-quiet btn-small" id="gameToolsBtn" type="button" hidden>游戏菜单</button>
+      <button class="btn btn-quiet btn-small" id="saveBtn" type="button" hidden="">保存进度</button>
+      <button class="btn btn-quiet btn-small" id="newGameBtn" type="button" hidden="">重新开局</button>
+      <button class="btn btn-small" id="apiBtn" type="button">API 配置</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="setup-view" id="setupView" aria-labelledby="setupTitle">
+      <div class="setup-heading">
+        <div>
+          <div class="eyebrow">CREATE YOUR STORY · 角色建档 · v1.1</div>
+          <h1 id="setupTitle">写下你的<br><em>银幕人生</em></h1>
+          <p class="lede">设定角色，从第一次机会开始。你的每次选择与自由输入，都会改变关系、风评和下一幕。</p>
+        </div>
+        <div class="issue-note">镜头记录发生过的事，选择决定故事如何被讲述。这里没有标准答案，只有属于你的星途。</div>
+      </div>
+
+      <div class="setup-grid">
+        <form class="form-card" id="profileForm">
+          <div class="card-head"><h2>主角建档</h2><span class="card-index">01 / PERSONA</span></div>
+          <div class="form-body">
+            <div class="section-title">基本资料</div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="charName">本名</label>
+                <input id="charName" name="charName" maxlength="16" value="林见夏" required="">
+              </div>
+              <div class="field">
+                <label for="stageName">艺名 <span class="optional">可选</span></label>
+                <input id="stageName" name="stageName" maxlength="16" placeholder="留空则使用本名">
+              </div>
+              <div class="field">
+                <label for="gender">性别认同</label>
+                <select id="gender" name="gender">
+                  <option>女性</option><option>男性</option><option>非二元</option><option>不愿定义</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="age">年龄</label>
+                <input id="age" name="age" type="number" min="18" max="55" value="22" required="">
+              </div>
+              <div class="field">
+                <label for="orientation">情感 / 性取向</label>
+                <select id="orientation" name="orientation">
+                  <option>异性恋</option><option>同性恋</option><option>双性恋</option><option>泛性恋</option><option>无性恋</option><option>尚未确定</option><option>不进入感情线</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="career">入圈起点</label>
+                <select id="career" name="career">
+                  <option>电影学院应届生</option><option>毫无背景的素人</option><option>选秀淘汰选手</option><option>短视频网红转型</option><option>沉寂多年的童星</option><option>偶像团体边缘成员</option><option>带着秘密的资源新人</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="appearance">外貌与气质</label>
+                <textarea id="appearance" name="appearance" maxlength="180" placeholder="例如：冷白皮，短黑发，眼尾微挑；镜头前清冷，笑起来却很有亲和力。">冷白皮，短黑发，眼尾微挑；镜头前有疏离感，笑起来却很有亲和力。</textarea>
+              </div>
+            </div>
+
+            <div class="section-title">内在与来路</div>
+            <div class="field-grid">
+              <div class="field full">
+                <label for="personality">性格关键词</label>
+                <input id="personality" name="personality" maxlength="120" value="清醒，慢热，胜负欲强">
+                <div class="tag-row" id="personalityTags" aria-label="快捷性格标签">
+                  <button type="button" class="tag" aria-pressed="false">野心勃勃</button>
+                  <button type="button" class="tag" aria-pressed="false">外冷内热</button>
+                  <button type="button" class="tag" aria-pressed="false">八面玲珑</button>
+                  <button type="button" class="tag" aria-pressed="false">理想主义</button>
+                  <button type="button" class="tag" aria-pressed="false">钝感力强</button>
+                  <button type="button" class="tag" aria-pressed="false">睚眦必报</button>
+                </div>
+              </div>
+              <div class="field full">
+                <label for="background">家庭背景与秘密</label>
+                <textarea id="background" name="background" maxlength="260" placeholder="家庭、成长经历、为何入圈，以及不想被人知道的事。">来自南方小城，父母经营一家老电影院。为了替家里还债进入娱乐圈，却从不肯在镜头前提起。</textarea>
+              </div>
+              <div class="field">
+                <label for="goal">最想得到什么</label>
+                <select id="goal" name="goal">
+                  <option>拿到最高表演奖</option><option>成为顶流明星</option><option>掌握自己的事业</option><option>赚到足够的钱</option><option>查清一桩旧事</option><option>只演真正喜欢的戏</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="opening">故事开场</label>
+                <select id="opening" name="opening">
+                  <option>一场决定命运的试镜</option><option>热搜爆掉的凌晨</option><option>进组第一天</option><option>颁奖礼后台</option><option>一档封闭式真人秀</option><option>经纪公司签约桌前</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="section-title">叙事偏好</div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="style">文风</label>
+                <select id="style" name="style">
+                  <option>现实向影视小说</option><option>娱乐圈爽文</option><option>细腻晋江风</option><option>轻喜剧群像</option><option>狗血戏剧风</option><option>悬疑暗黑风</option><option>治愈成长系</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="romance">感情线浓度</label>
+                <select id="romance" name="romance">
+                  <option>适中，事业与情感并重</option><option>低，以事业为主</option><option>高，情感纠葛密集</option><option>无，不生成感情线</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label>剧情节奏</label>
+                <div class="radio-strip">
+                  <input id="paceSlow" name="pace" type="radio" value="慢热细腻"><label for="paceSlow">慢热细腻</label>
+                  <input id="paceMid" name="pace" type="radio" value="张弛有度" checked=""><label for="paceMid">张弛有度</label>
+                  <input id="paceFast" name="pace" type="radio" value="高能快节奏"><label for="paceFast">高能快节奏</label>
+                </div>
+              </div>
+              <div class="field full">
+                <label for="limits">不想出现的内容 <span class="optional">可选</span></label>
+                <input id="limits" name="limits" maxlength="160" placeholder="例如：不要背叛、不要虐宠、不要悲剧结局">
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <aside class="setup-aside" aria-label="开局说明">
+          <div class="setup-preview-card" aria-label="角色预览">
+            <div class="preview-kicker">角色预览 · CAST PREVIEW</div>
+            <div class="preview-main">
+              <div class="preview-avatar" id="setupPreviewAvatar">林</div>
+              <div>
+                <h3 class="preview-name" id="setupPreviewName">林见夏</h3>
+                <p class="preview-meta" id="setupPreviewMeta">22 岁 · 电影学院应届生</p>
+              </div>
+            </div>
+            <div class="preview-traits" id="setupPreviewTraits"><span class="preview-trait">清醒</span><span class="preview-trait">慢热</span><span class="preview-trait">胜负欲强</span></div>
+          </div>
+          <div class="aside-block">
+            <h3>你的故事，由你续写</h3>
+            <p>每一幕会给出 3—4 个选项。也可以完全无视选项，自由输入行动、台词或心理活动。</p>
+          </div>
+          <div class="aside-block demo-note">
+            <b>!</b>
+            <p>没有 API 也能离线试玩。配置兼容 OpenAI 格式的接口后，剧情会根据完整人设持续生成。</p>
+          </div>
+          <div class="aside-block">
+            <button class="btn btn-primary start-btn" id="startBtn" type="submit" form="profileForm">打开第一幕</button>
+            <button class="btn btn-quiet" id="setupApiBtn" type="button" style="width:100%;margin-top:8px">先配置 API →</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="game-view" id="gameView" aria-label="剧情界面">
+      <aside class="dossier" id="dossier">
+        <div class="dossier-title"><h2>艺人档案</h2><span class="file-no" id="fileNo">FILE #0001</span></div>
+        <div class="profile-card">
+          <div class="profile-avatar" id="profileAvatar">林</div>
+          <h3 class="profile-name" id="profileName">林见夏</h3>
+          <p class="profile-line" id="profileLine">22 岁 · 电影学院应届生</p>
+          <p class="profile-desc" id="profileDesc">清醒，慢热，胜负欲强</p>
+        </div>
+        <div class="side-section">
+          <h3>Career index</h3>
+          <div id="stats"></div>
+        </div>
+        <div class="side-section">
+          <h3>Key contacts</h3>
+          <div class="contacts" id="contacts"></div>
+        </div>
+      </aside>
+
+      <div class="story-shell">
+        <div class="story-toolbar">
+          <button type="button" class="btn btn-small dossier-mobile" id="dossierBtn">查看档案</button>
+          <span class="scene-meta" id="sceneMeta">北京 · 09:40 PM</span>
+          <span class="story-status" id="storyStatus"><i></i><span>等待选择</span></span>
+        </div>
+        <div class="story-stream" id="storyStream" aria-live="polite"></div>
+        <div class="choices-panel" id="choicesPanel">
+          <div class="choices-label">你的下一步</div>
+          <div class="choices" id="choices"></div>
+          <div class="custom-action">
+            <label class="sr-only" for="customInput">自由输入你的行动</label>
+            <textarea id="customInput" maxlength="500" placeholder="自由输入：你想做什么、说什么，或希望剧情如何发展……"></textarea>
+            <button class="btn btn-primary" id="sendBtn" type="button">继续剧情</button>
+          </div>
+          <p class="key-hint">Ctrl / ⌘ + Enter 发送</p>
+        </div>
+      </div>
+
+      <aside class="intel-rail" id="intelRail" aria-label="剧情情报栏">
+        <div class="rail-block">
+          <div class="rail-kicker">Story progress</div>
+          <p class="rail-number" id="railChapter">CH. 00</p>
+          <p class="rail-copy" id="railScene">故事尚未开始</p>
+        </div>
+        <div class="rail-block">
+          <div class="rail-kicker">Current goal</div>
+          <div class="rail-goal"><p class="rail-copy" id="railGoal" style="margin:0">等待角色建档</p></div>
+        </div>
+        <div class="rail-block">
+          <div class="rail-kicker">Last changes</div>
+          <div class="rail-list" id="railChanges"><div class="rail-copy">下一幕结束后显示变化。</div></div>
+        </div>
+        <div class="rail-block">
+          <div class="rail-kicker">Quick access</div>
+          <div class="rail-actions">
+            <button class="btn btn-small" id="railDirectoryBtn" type="button">章节目录</button>
+            <button class="btn btn-small" id="railReaderBtn" type="button">阅读设置</button>
+            <button class="btn btn-small" id="railExportBtn" type="button">导出存档</button>
+            <button class="btn btn-quiet btn-small" id="jumpLatestBtn" type="button">回到最新剧情 ↓</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="backdrop" id="backdrop"></div>
+  <aside class="drawer" id="apiDrawer" role="dialog" aria-modal="true" aria-labelledby="apiTitle" aria-hidden="true">
+    <div class="drawer-head">
+      <div><h2 id="apiTitle">API 配置</h2><p>支持 OpenAI 兼容的 Chat Completions 接口</p></div>
+      <button class="btn btn-quiet btn-small" id="closeApiBtn" type="button" aria-label="关闭 API 配置">关闭</button>
+    </div>
+    <div class="field">
+      <label for="apiBase">API 地址</label>
+      <input id="apiBase" type="url" value="https://api.openai.com/v1" placeholder="https://api.example.com/v1">
+    </div>
+    <div class="field">
+      <label for="apiKey">API Key</label>
+      <input id="apiKey" type="password" autocomplete="off" placeholder="sk-...">
+    </div>
+    <div class="field">
+      <label for="modelInput">模型</label>
+      <div class="input-group">
+        <input id="modelInput" list="modelList" value="gpt-4o-mini" placeholder="输入或拉取模型">
+        <datalist id="modelList"></datalist>
+        <button class="btn" id="fetchModelsBtn" type="button">拉取模型</button>
+      </div>
+      <span class="field-hint" id="modelHint">也可以直接输入模型名称。</span>
+    </div>
+    <div class="field">
+      <label for="temperature">创意程度 <span id="temperatureValue" class="optional">0.90</span></label>
+      <input id="temperature" type="range" min="0.2" max="1.3" step="0.05" value="0.9">
+    </div>
+    <div class="switch-line">
+      <span>在这台设备上记住 API Key</span>
+      <label class="switch"><input id="rememberKey" type="checkbox"><i aria-hidden="true"></i><span class="sr-only">记住 API Key</span></label>
+    </div>
+    <div class="api-actions">
+      <button class="btn btn-primary" id="saveApiBtn" type="button">保存配置</button>
+      <button class="btn" id="clearApiBtn" type="button">清除</button>
+    </div>
+    <div class="api-note">Key 仅用于从你的浏览器请求所填接口；勾选“记住”后会保存在本机浏览器中。请勿在公共设备使用。若直连失败，请确认服务商允许浏览器跨域访问（CORS）。</div>
+  </aside>
+
+  <aside class="drawer tool-drawer" id="gameToolsDrawer" role="dialog" aria-modal="true" aria-labelledby="gameToolsTitle" aria-hidden="true">
+    <div class="drawer-head">
+      <div><h2 id="gameToolsTitle">游戏菜单</h2><p>回顾章节、调整阅读体验与管理本地存档</p></div>
+      <button class="btn btn-quiet btn-small" id="closeGameToolsBtn" type="button">关闭</button>
+    </div>
+    <section class="drawer-section">
+      <h3>章节目录</h3>
+      <div class="chapter-directory" id="chapterDirectory"><p class="rail-copy">开始故事后，这里会记录每一幕。</p></div>
+    </section>
+    <section class="drawer-section">
+      <h3>阅读设置</h3>
+      <div class="setting-row"><label for="readerWidth">正文宽度</label><input id="readerWidth" type="range" min="720" max="1040" step="20" value="900"><span class="setting-value" id="readerWidthValue">900</span></div>
+      <div class="setting-row"><label for="readerFont">正文字号</label><input id="readerFont" type="range" min="0.90" max="1.20" step="0.05" value="1"><span class="setting-value" id="readerFontValue">100%</span></div>
+      <div class="setting-row"><label for="readerLine">正文行距</label><input id="readerLine" type="range" min="1.75" max="2.30" step="0.05" value="2.02"><span class="setting-value" id="readerLineValue">2.02</span></div>
+      <button class="btn btn-small" id="resetReaderBtn" type="button">恢复默认阅读设置</button>
+    </section>
+    <section class="drawer-section">
+      <h3>存档管理</h3>
+      <div class="drawer-actions-grid">
+        <button class="btn" id="exportSaveBtn" type="button">导出 JSON 存档</button>
+        <button class="btn" id="importSaveBtn" type="button">导入 JSON 存档</button>
+      </div>
+      <input id="importSaveInput" type="file" accept="application/json,.json" hidden>
+      <p class="drawer-footnote">存档仅包含角色设定、章节、数值、关系和长期记忆，不包含你的 API Key。</p>
+    </section>
+  </aside>
+
+  <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-card">
+      <h2 id="confirmTitle">重新开局？</h2>
+      <p>当前进度仍会保留在本机，直到新游戏开始后被覆盖。</p>
+      <div class="modal-actions"><button class="btn" id="cancelNewBtn" type="button">取消</button><button class="btn btn-primary" id="confirmNewBtn" type="button">回到建档</button></div>
+    </div>
+  </div>
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const STORAGE_GAME = 'stardom_sim_save_v1';
+      const STORAGE_API = 'stardom_sim_api_v1';
+      const STORAGE_READER = 'stardom_sim_reader_v1';
+      const statLabels = { fame: '知名度', acting: '演技', network: '人脉', reputation: '口碑', pressure: '压力', wealth: '财富' };
+
+      const state = {
+        profile: null,
+        chapter: 0,
+        stats: { fame: 8, acting: 38, network: 10, reputation: 25, pressure: 12, wealth: 8 },
+        contacts: [
+          { name: '周岚', role: '经纪人', relation: 12 },
+          { name: '贺闻舟', role: '竞争演员', relation: 0 }
+        ],
+        chapters: [],
+        memory: [],
+        busy: false,
+        lastSavedAt: '',
+        api: { base: 'https://api.openai.com/v1', key: '', model: 'gpt-4o-mini', temperature: 0.9, rememberKey: false }
+      };
+
+      const offlineScenes = [
+        {
+          title: '镜头没有喊停', scene: '旧制片厂 · B 棚', time: '09:40 PM', weather: '雨',
+          paragraphs: p => [
+            `雨落在旧制片厂的铁皮屋顶上，像一场迟迟不肯结束的掌声。${p.name}推开 B 棚的门时，试镜名单上只剩最后三个名字。`,
+            `选角导演程砚没有抬头，只把一页临时改过的剧本推过来：“原来的哭戏删了。你演一个刚知道自己被最信任的人出卖，却必须对镜头笑的人。”`,
+            `角落里坐着投资方临时塞进来的新人。对方抬眼看了${p.name}一下，那目光不算友善。手机在口袋里震动，经纪人周岚发来一句：别抢戏，先拿到角色。`,
+            `场记板落下。整个摄影棚忽然安静，所有人都等着${p.name}做出第一个决定。`
+          ],
+          choices: [
+            { text: '完全收住眼泪，只用一个笑完成表演', hint: '高风险，也最考验镜头表现力' },
+            { text: '按自己的理解临场改一句台词', hint: '可能惊艳，也可能被认为不守规矩' },
+            { text: '先请求与搭戏演员对一遍节奏', hint: '稳妥地建立合作感' },
+            { text: '照经纪人的意思，不抢风头地完成', hint: '降低风险，保留后手' }
+          ]
+        },
+        {
+          title: '热搜第七码', scene: '保姆车 · 三环高架', time: '00:17 AM', weather: '夜',
+          paragraphs: (p, action) => [
+            `保姆车驶上高架时，周岚把手机递到${p.name}面前。屏幕上，“${p.name} 试镜”正从热搜第十九位往上爬。偷拍视频只有十二秒，偏偏截到了最容易引发争议的那一刻。`,
+            `“有人在推。”周岚说。她的手指停在一条营销号爆料上，语气平静得像暴雨前的气压，“好消息是他们开始注意你，坏消息是他们替你写好了人设。”`,
+            `上一幕里，${p.name}选择了“${action}”。那段决定被偷拍视频切掉了前因后果，只剩一个足够暧昧的表情。评论区已经分成两派。`,
+            `车窗映出${p.name}的脸。距离公司发出统一回应还有二十分钟，这二十分钟足够把一个新人推上去，也足够把人钉在错误的故事里。`
+          ],
+          choices: [
+            { text: '立刻发一条不解释、只谈作品的微博', hint: '强化清醒的公众形象' },
+            { text: '让公司联系偷拍视频的完整来源', hint: '先查幕后推手' },
+            { text: '顺势接住争议，放出试镜正片', hint: '把舆论变成一次公开表演' },
+            { text: '保持沉默，去见那位神秘制片人', hint: '舆论会发酵，但可能换来新机会' }
+          ]
+        },
+        {
+          title: '同一张通告单', scene: '《逆光》剧组 · 化妆间', time: '05:55 AM', weather: '阴',
+          paragraphs: (p, action) => [
+            `开机第七天，${p.name}的名字第一次被印在单独的通告单上。位置不高，却足够让化妆间里几道目光同时停顿半秒。`,
+            `昨夜“${action}”的余波还没有散去。导演在群里只发了两个字：照拍。没人知道这是认可，还是最后一次观察。`,
+            `贺闻舟坐在隔壁位置卸妆，忽然把自己的剧本扣在桌面上：“今天那场对手戏，导演想让我们真打。你经纪人知道吗？”他嘴上提醒，眼神却像在试探。`,
+            `门外有人喊走戏。周岚还没到，导演助理递来的新版剧本里，多了一个原本属于贺闻舟的近景。`
+          ],
+          choices: [
+            { text: '主动把近景还给贺闻舟', hint: '关系可能缓和，但会失去曝光' },
+            { text: '接受改动，并提出增加动作设计', hint: '抓住机会，把压力留在片场' },
+            { text: '当面问导演为什么临时改戏', hint: '直接、冒险，也可能得到真话' },
+            { text: '先把新版剧本拍给周岚', hint: '让团队处理潜在冲突' }
+          ]
+        },
+        {
+          title: '红毯尽头没有出口', scene: '银幕盛典 · 后台通道', time: '07:28 PM', weather: '晴',
+          paragraphs: (p, action) => [
+            `聚光灯从幕布缝隙里切进来，后台每个人的脸都像被分成明暗两半。${p.name}刚走完第一段红毯，主持人口中的称呼已经从“新人”变成“近期备受关注的演员”。`,
+            `几小时前，团队还在争论“${action}”究竟值不值得。现在答案似乎被写进实时上升的讨论度里，却没有人敢先庆祝。`,
+            `一位从未合作过的金牌制片人拦住${p.name}，递来一张没有片名的名片：“我有个项目，三个月封闭拍摄。接了，你现在这部戏的宣传就赶不上。”`,
+            `另一头，贺闻舟正在等候合影。他看见那张名片，第一次没有掩饰神色里的复杂。前台开始倒数，选择的时间只剩一分钟。`
+          ],
+          choices: [
+            { text: '收下名片，但要求先看完整剧本', hint: '不轻易承诺，保留主动权' },
+            { text: '婉拒项目，完成当前作品的宣传责任', hint: '稳住口碑与团队信任' },
+            { text: '邀请贺闻舟一起听项目介绍', hint: '出乎所有人的意料' },
+            { text: '当场答应三个月封闭拍摄', hint: '豪赌下一部作品' }
+          ]
+        }
+      ];
+
+      function clamp(n, min = 0, max = 100) { return Math.min(max, Math.max(min, Number(n) || 0)); }
+      function escapeText(value) { return String(value ?? '').replace(/[<>]/g, c => c === '<' ? '〈' : '〉'); }
+      function normalizeBase(url) { return String(url || '').trim().replace(/\/+$/, ''); }
+      function hasApi() { return Boolean(state.api.base && state.api.key && state.api.model); }
+      function getDisplayName() { return state.profile?.stageName || state.profile?.name || '主角'; }
+      function toast(message, type = '') {
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = message;
+        $('#toastStack').appendChild(el);
+        setTimeout(() => el.remove(), 3600);
+      }
+
+      function syncSetupPreview() {
+        const name = ($('#stageName').value || $('#charName').value || '未命名').trim();
+        const career = $('#career').value || '等待选择起点';
+        const age = $('#age').value || '—';
+        const traits = $('#personality').value.split(/[，,]/).map(v => v.trim()).filter(Boolean).slice(0, 4);
+        $('#setupPreviewAvatar').textContent = [...name][0] || '星';
+        $('#setupPreviewName').textContent = name;
+        $('#setupPreviewMeta').textContent = `${age} 岁 · ${career}`;
+        const box = $('#setupPreviewTraits');
+        box.replaceChildren(...(traits.length ? traits : ['等待填写性格']).map(t => {
+          const span = document.createElement('span'); span.className = 'preview-trait'; span.textContent = t; return span;
+        }));
+      }
+
+      function currentSnapshot() {
+        return {
+          version: '1.1', profile: state.profile, chapter: state.chapter, stats: state.stats,
+          contacts: state.contacts, chapters: state.chapters, memory: state.memory,
+          savedAt: new Date().toISOString()
+        };
+      }
+
+      function updateSaveStatus(dateLike) {
+        if (!state.profile) return;
+        const date = dateLike ? new Date(dateLike) : new Date();
+        state.lastSavedAt = date.toISOString();
+        const label = $('#saveStatus');
+        if (!label) return;
+        label.hidden = false;
+        label.textContent = `已保存 ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      }
+
+      function buildEffects(chapter) {
+        const effects = [];
+        for (const [key, value] of Object.entries(chapter.state_changes || {})) {
+          const n = Number(value); if (!Number.isFinite(n) || n === 0 || !statLabels[key]) continue;
+          effects.push({ label: statLabels[key], value: n, type: n > 0 ? 'positive' : 'negative' });
+        }
+        for (const person of chapter.contacts || []) {
+          const n = Number(person.change); if (!person?.name || !Number.isFinite(n) || n === 0) continue;
+          effects.push({ label: `${person.name} · 关系`, value: n, type: 'relationship' });
+        }
+        return effects;
+      }
+
+      function renderRail(chapter = state.chapters.at(-1)) {
+        if (!state.profile) return;
+        $('#railGoal').textContent = state.profile.goal || '在娱乐圈留下自己的名字';
+        $('#railChapter').textContent = `CH. ${String(state.chapter || 0).padStart(2, '0')}`;
+        $('#railScene').textContent = chapter ? `${chapter.scene} · ${chapter.time}` : '故事尚未开始';
+        const box = $('#railChanges');
+        box.replaceChildren();
+        const effects = chapter ? buildEffects(chapter) : [];
+        if (!effects.length) {
+          const empty = document.createElement('div'); empty.className = 'rail-copy'; empty.textContent = '本幕没有显著数值变化。'; box.appendChild(empty); return;
+        }
+        effects.slice(0, 7).forEach(item => {
+          const row = document.createElement('div'); row.className = 'rail-change';
+          const name = document.createElement('span'); name.textContent = item.label;
+          const value = document.createElement('strong'); value.textContent = `${item.value > 0 ? '+' : ''}${item.value}`;
+          row.append(name, value); box.appendChild(row);
+        });
+      }
+
+      function renderChapterDirectory() {
+        const box = $('#chapterDirectory'); if (!box) return;
+        box.replaceChildren();
+        if (!state.chapters.length) {
+          const p = document.createElement('p'); p.className = 'rail-copy'; p.textContent = '开始故事后，这里会记录每一幕。'; box.appendChild(p); return;
+        }
+        state.chapters.forEach(ch => {
+          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'directory-item';
+          const no = document.createElement('span'); no.className = 'directory-no'; no.textContent = `CH.${String(ch.chapter).padStart(2, '0')}`;
+          const copy = document.createElement('span'); copy.className = 'directory-copy';
+          const title = document.createElement('b'); title.textContent = ch.title;
+          const action = document.createElement('small'); action.textContent = ch.action ? `选择：${ch.action}` : `${ch.scene} · ${ch.time}`;
+          copy.append(title, action); btn.append(no, copy);
+          btn.addEventListener('click', () => {
+            closeGameTools();
+            setTimeout(() => document.getElementById(`chapter-${ch.chapter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+          });
+          box.appendChild(btn);
+        });
+      }
+
+      const readerDefaults = { width: 900, font: 1, line: 2.02 };
+      function applyReaderSettings(settings = {}) {
+        const r = { ...readerDefaults, ...settings };
+        document.documentElement.style.setProperty('--story-width', `${r.width}px`);
+        document.documentElement.style.setProperty('--reading-font', r.font);
+        document.documentElement.style.setProperty('--reading-line', r.line);
+        $('#readerWidth').value = r.width; $('#readerWidthValue').textContent = String(r.width);
+        $('#readerFont').value = r.font; $('#readerFontValue').textContent = `${Math.round(r.font * 100)}%`;
+        $('#readerLine').value = r.line; $('#readerLineValue').textContent = Number(r.line).toFixed(2);
+        localStorage.setItem(STORAGE_READER, JSON.stringify(r));
+      }
+
+      function loadReaderSettings() {
+        try { applyReaderSettings(JSON.parse(localStorage.getItem(STORAGE_READER) || '{}')); }
+        catch (_) { applyReaderSettings(readerDefaults); }
+      }
+
+      function openGameTools(section = '') {
+        if (!state.profile) return;
+        renderChapterDirectory();
+        $('#gameToolsDrawer').classList.add('open'); $('#gameToolsDrawer').setAttribute('aria-hidden', 'false'); $('#backdrop').classList.add('open');
+        if (section === 'reader') setTimeout(() => $('#readerWidth').focus(), 70);
+      }
+      function closeGameTools() {
+        $('#gameToolsDrawer').classList.remove('open'); $('#gameToolsDrawer').setAttribute('aria-hidden', 'true');
+        if (!$('#apiDrawer').classList.contains('open') && !$('#dossier').classList.contains('open')) $('#backdrop').classList.remove('open');
+      }
+
+      function exportSave() {
+        if (!state.profile) return toast('还没有可以导出的游戏进度', 'error');
+        const snapshot = currentSnapshot();
+        const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safeName = getDisplayName().replace(/[\\/:*?"<>|]/g, '_');
+        a.href = url; a.download = `星途_${safeName}_CH${String(state.chapter).padStart(2, '0')}.json`; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        toast('存档已导出');
+      }
+
+      async function importSaveFile(file) {
+        if (!file) return;
+        try {
+          const data = JSON.parse(await file.text());
+          if (!data?.profile || !Array.isArray(data?.chapters)) throw new Error('这不是有效的《星途》存档文件');
+          const snapshot = {
+            profile: data.profile,
+            chapter: Number(data.chapter) || data.chapters.length,
+            stats: { ...state.stats, ...(data.stats || {}) },
+            contacts: Array.isArray(data.contacts) ? data.contacts : [],
+            chapters: data.chapters,
+            memory: Array.isArray(data.memory) ? data.memory : [],
+            savedAt: new Date().toISOString()
+          };
+          localStorage.setItem(STORAGE_GAME, JSON.stringify(snapshot));
+          closeGameTools();
+          restoreGame();
+          toast('存档导入成功');
+        } catch (error) { toast(error.message || '存档导入失败', 'error'); }
+        finally { $('#importSaveInput').value = ''; }
+      }
+
+      function loadApi() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_API) || '{}');
+          state.api = { ...state.api, ...saved };
+          if (!state.api.rememberKey) state.api.key = '';
+        } catch (_) {}
+        $('#apiBase').value = state.api.base;
+        $('#apiKey').value = state.api.key;
+        $('#modelInput').value = state.api.model;
+        $('#temperature').value = state.api.temperature;
+        $('#temperatureValue').textContent = Number(state.api.temperature).toFixed(2);
+        $('#rememberKey').checked = Boolean(state.api.rememberKey);
+        updateModeBadge();
+      }
+
+      function saveApi() {
+        state.api.base = normalizeBase($('#apiBase').value);
+        state.api.key = $('#apiKey').value.trim();
+        state.api.model = $('#modelInput').value.trim();
+        state.api.temperature = Number($('#temperature').value);
+        state.api.rememberKey = $('#rememberKey').checked;
+        const stored = { ...state.api, key: state.api.rememberKey ? state.api.key : '' };
+        localStorage.setItem(STORAGE_API, JSON.stringify(stored));
+        updateModeBadge();
+        closeApi();
+        toast(hasApi() ? `已启用 AI 模式：${state.api.model}` : '配置已保存，将使用离线试玩模式');
+      }
+
+      function updateModeBadge() {
+        const badge = $('#modeBadge');
+        const live = hasApi();
+        badge.textContent = live ? `AI · ${state.api.model}` : '离线试玩';
+        badge.classList.toggle('live', live);
+      }
+
+      async function fetchModels() {
+        const base = normalizeBase($('#apiBase').value);
+        const key = $('#apiKey').value.trim();
+        if (!base) return toast('请先填写 API 地址', 'error');
+        const btn = $('#fetchModelsBtn');
+        btn.disabled = true;
+        btn.textContent = '拉取中…';
+        $('#modelHint').textContent = '正在连接模型列表…';
+        try {
+          const headers = { 'Accept': 'application/json' };
+          if (key) headers.Authorization = `Bearer ${key}`;
+          const response = await fetch(`${base}/models`, { headers });
+          const raw = await response.text();
+          if (!response.ok) throw new Error(readApiError(raw) || `HTTP ${response.status}`);
+          const json = JSON.parse(raw);
+          const models = (Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [])
+            .map(item => typeof item === 'string' ? item : item.id)
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b));
+          if (!models.length) throw new Error('接口返回成功，但没有找到模型名称');
+          $('#modelList').replaceChildren(...models.map(id => {
+            const option = document.createElement('option');
+            option.value = id;
+            return option;
+          }));
+          if (!models.includes($('#modelInput').value)) $('#modelInput').value = models[0];
+          $('#modelHint').textContent = `已拉取 ${models.length} 个模型，可输入名称筛选。`;
+          toast(`已拉取 ${models.length} 个模型`);
+        } catch (error) {
+          $('#modelHint').textContent = '拉取失败；仍可直接输入模型名称。';
+          toast(friendlyApiError(error), 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '拉取模型';
+        }
+      }
+
+      function profileFromForm() {
+        const form = new FormData($('#profileForm'));
+        return {
+          name: escapeText(form.get('charName')).trim(),
+          stageName: escapeText(form.get('stageName')).trim(),
+          gender: escapeText(form.get('gender')),
+          age: clamp(form.get('age'), 18, 55),
+          orientation: escapeText(form.get('orientation')),
+          career: escapeText(form.get('career')),
+          appearance: escapeText(form.get('appearance')).trim(),
+          personality: escapeText(form.get('personality')).trim(),
+          background: escapeText(form.get('background')).trim(),
+          goal: escapeText(form.get('goal')),
+          opening: escapeText(form.get('opening')),
+          style: escapeText(form.get('style')),
+          romance: escapeText(form.get('romance')),
+          pace: escapeText(form.get('pace')),
+          limits: escapeText(form.get('limits')).trim()
+        };
+      }
+
+      async function startGame(event) {
+        event.preventDefault();
+        if (state.busy) return;
+        state.profile = profileFromForm();
+        if (!state.profile.name) return toast('请给主角取一个名字', 'error');
+        state.chapter = 0;
+        state.stats = { fame: 8, acting: 38, network: 10, reputation: 25, pressure: 12, wealth: 8 };
+        state.contacts = [
+          { name: '周岚', role: '经纪人', relation: 12 },
+          { name: '贺闻舟', role: '竞争演员', relation: 0 }
+        ];
+        state.chapters = [];
+        state.memory = [];
+        showGame();
+        setBusy(true, '正在打开第一幕…');
+        try {
+          const result = hasApi() ? await generateWithApi('开始故事。严格依据开场设定，写第一幕。') : makeOfflineChapter('开始故事');
+          addChapter(result, '开局');
+          saveGame(false);
+        } catch (error) {
+          toast(friendlyApiError(error), 'error');
+          addChapter(makeOfflineChapter('API 暂时不可用，切换为离线开局'), '开局');
+          toast('已用离线剧情继续，可稍后检查 API 配置');
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function showGame() {
+        $('#setupView').hidden = true;
+        $('#gameView').classList.add('active');
+        $('#saveBtn').hidden = false;
+        $('#newGameBtn').hidden = false;
+        $('#gameToolsBtn').hidden = false;
+        $('#saveStatus').hidden = false;
+        renderProfile();
+        $('#storyStream').replaceChildren();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function renderProfile() {
+        if (!state.profile) return;
+        const name = getDisplayName();
+        $('#profileAvatar').textContent = [...name][0] || '星';
+        $('#profileName').textContent = name;
+        $('#profileLine').textContent = `${state.profile.age} 岁 · ${state.profile.career}`;
+        $('#profileDesc').textContent = state.profile.personality || state.profile.appearance;
+        $('#fileNo').textContent = `FILE #${String(Math.abs(hashCode(state.profile.name)) % 10000).padStart(4, '0')}`;
+        renderStats();
+        renderContacts();
+        renderRail();
+      }
+
+      function renderStats() {
+        const container = $('#stats');
+        container.replaceChildren();
+        for (const [key, label] of Object.entries(statLabels)) {
+          const row = document.createElement('div');
+          row.className = 'stat';
+          const line = document.createElement('div');
+          line.className = 'stat-line';
+          const name = document.createElement('span'); name.textContent = label;
+          const value = document.createElement('strong'); value.textContent = String(clamp(state.stats[key]));
+          const track = document.createElement('div'); track.className = 'stat-track';
+          const fill = document.createElement('div'); fill.className = 'stat-fill'; fill.style.width = `${clamp(state.stats[key])}%`;
+          line.append(name, value); track.appendChild(fill); row.append(line, track); container.appendChild(row);
+        }
+      }
+
+      function renderContacts() {
+        const container = $('#contacts');
+        container.replaceChildren();
+        state.contacts.slice(0, 5).forEach(person => {
+          const row = document.createElement('div'); row.className = 'contact';
+          const icon = document.createElement('span'); icon.className = 'contact-icon'; icon.textContent = [...person.name][0] || '人';
+          const info = document.createElement('span');
+          const name = document.createElement('b'); name.textContent = person.name;
+          const role = document.createElement('small'); role.textContent = person.role || '圈内关系';
+          info.append(name, role);
+          const rel = document.createElement('em'); rel.textContent = `${Number(person.relation) >= 0 ? '+' : ''}${Number(person.relation) || 0}`;
+          row.append(icon, info, rel); container.appendChild(row);
+        });
+      }
+
+      function addChapter(data, action) {
+        const normalized = normalizeChapter(data);
+        state.chapter += 1;
+        normalized.chapter = state.chapter;
+        normalized.action = action;
+        state.chapters.push(normalized);
+        if (normalized.memory?.length) state.memory.push(...normalized.memory.slice(0, 4));
+        state.memory = [...new Set(state.memory)].slice(-20);
+        applyChanges(normalized.state_changes);
+        applyContacts(normalized.contacts);
+        renderChapter(normalized);
+        renderChoices(normalized.choices);
+        renderRail(normalized);
+        renderChapterDirectory();
+        $('#sceneMeta').textContent = `${normalized.scene} · ${normalized.time}`;
+      }
+
+      function normalizeChapter(data) {
+        const fallback = offlineScenes[state.chapter % offlineScenes.length];
+        const paragraphs = Array.isArray(data?.paragraphs) ? data.paragraphs : Array.isArray(data?.content) ? data.content : [String(data?.content || '灯光亮起，故事仍在继续。')];
+        const choices = Array.isArray(data?.choices) && data.choices.length ? data.choices : fallback.choices;
+        return {
+          title: escapeText(data?.title || fallback.title),
+          scene: escapeText(data?.scene || fallback.scene),
+          time: escapeText(data?.time || fallback.time),
+          weather: escapeText(data?.weather || ''),
+          paragraphs: paragraphs.map(v => escapeText(v)).filter(Boolean).slice(0, 8),
+          choices: choices.map((v, i) => typeof v === 'string' ? { text: escapeText(v), hint: '' } : { text: escapeText(v.text || `选择 ${i + 1}`), hint: escapeText(v.hint || '') }).slice(0, 4),
+          state_changes: data?.state_changes && typeof data.state_changes === 'object' ? data.state_changes : {},
+          contacts: Array.isArray(data?.contacts) ? data.contacts : [],
+          memory: Array.isArray(data?.memory) ? data.memory.map(escapeText) : []
+        };
+      }
+
+      function renderChapter(chapter) {
+        const article = document.createElement('article'); article.className = 'chapter'; article.id = `chapter-${chapter.chapter}`;
+        const head = document.createElement('div'); head.className = 'chapter-head';
+        const no = document.createElement('div'); no.className = 'chapter-no'; no.textContent = `CH. ${String(chapter.chapter).padStart(2, '0')}`;
+        const titleBox = document.createElement('div');
+        const title = document.createElement('h2'); title.className = 'chapter-title'; title.textContent = chapter.title;
+        const sub = document.createElement('p'); sub.className = 'chapter-sub'; sub.textContent = [chapter.scene, chapter.time, chapter.weather].filter(Boolean).join(' · ');
+        titleBox.append(title, sub); head.append(no, titleBox);
+        if (chapter.chapter > 1 && chapter.action) {
+          const summary = document.createElement('div'); summary.className = 'choice-summary'; summary.textContent = `上一选择：${chapter.action}`; article.appendChild(summary);
+        }
+        const paper = document.createElement('div'); paper.className = 'story-paper';
+        chapter.paragraphs.forEach(text => { const p = document.createElement('p'); p.textContent = text; paper.appendChild(p); });
+        article.prepend(head); article.appendChild(paper);
+        const effects = buildEffects(chapter);
+        if (effects.length) {
+          const effectBox = document.createElement('div'); effectBox.className = 'chapter-effects';
+          effects.forEach(item => {
+            const pill = document.createElement('span'); pill.className = `effect-pill ${item.type}`;
+            const label = document.createElement('b'); label.textContent = item.label;
+            const value = document.createElement('strong'); value.textContent = `${item.value > 0 ? '+' : ''}${item.value}`;
+            pill.append(label, value); effectBox.appendChild(pill);
+          });
+          article.appendChild(effectBox);
+        }
+        $('#storyStream').appendChild(article);
+        requestAnimationFrame(() => article.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+
+      function renderChoices(choices) {
+        const box = $('#choices'); box.replaceChildren();
+        choices.forEach((choice, index) => {
+          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'choice';
+          const key = document.createElement('span'); key.className = 'choice-key'; key.textContent = String.fromCharCode(65 + index);
+          const copy = document.createElement('span');
+          const text = document.createElement('b'); text.textContent = choice.text;
+          const hint = document.createElement('small'); hint.textContent = choice.hint || '让故事沿这个方向继续';
+          copy.append(text, hint); btn.append(key, copy);
+          btn.addEventListener('click', () => continueStory(choice.text));
+          box.appendChild(btn);
+        });
+        $('#customInput').value = '';
+      }
+
+      function setBusy(busy, label = '') {
+        state.busy = busy;
+        $$('.choice').forEach(btn => btn.disabled = busy);
+        $('#sendBtn').disabled = busy;
+        $('#customInput').disabled = busy;
+        const status = $('#storyStatus'); status.classList.toggle('loading', busy);
+        $('span', status).textContent = busy ? label : '等待选择';
+        const old = $('#loadingCard');
+        if (old) old.remove();
+        if (busy && state.chapter > 0) {
+          const card = document.createElement('div'); card.id = 'loadingCard'; card.className = 'loading-card';
+          card.innerHTML = '<div class="loading-line"></div><div class="loading-line"></div><div class="loading-line"></div>';
+          $('#storyStream').appendChild(card);
+          requestAnimationFrame(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        }
+      }
+
+      async function continueStory(action) {
+        action = escapeText(action).trim();
+        if (!action || state.busy) return;
+        setBusy(true, hasApi() ? 'AI 正在续写…' : '正在推进剧情…');
+        try {
+          const result = hasApi() ? await generateWithApi(action) : await offlineDelay(action);
+          $('#loadingCard')?.remove();
+          addChapter(result, action);
+          saveGame(false);
+        } catch (error) {
+          $('#loadingCard')?.remove();
+          toast(friendlyApiError(error), 'error');
+          setBusy(false);
+          return;
+        }
+        setBusy(false);
+      }
+
+      function offlineDelay(action) {
+        return new Promise(resolve => setTimeout(() => resolve(makeOfflineChapter(action)), 650));
+      }
+
+      function makeOfflineChapter(action) {
+        const scene = offlineScenes[state.chapter % offlineScenes.length];
+        const p = { ...state.profile, name: getDisplayName() };
+        if (state.chapter === 0 && p.opening !== '一场决定命运的试镜') return makeOfflineOpening(p);
+        const changes = state.chapter === 0
+          ? { acting: 3, pressure: 4, network: 2 }
+          : guessOfflineChanges(action);
+        return {
+          title: state.chapter === 0 && state.profile.opening !== '一场决定命运的试镜' ? state.profile.opening : scene.title,
+          scene: scene.scene,
+          time: scene.time,
+          weather: scene.weather,
+          paragraphs: scene.paragraphs(p, action),
+          choices: scene.choices,
+          state_changes: changes,
+          contacts: state.chapter % 2 ? [{ name: '周岚', role: '经纪人', change: 2 }] : [{ name: '贺闻舟', role: '竞争演员', change: 1 }],
+          memory: state.chapter ? [`${p.name}在第 ${state.chapter + 1} 幕之前选择：${action}`] : [`${p.name}从${p.career}起步，目标是${p.goal}`]
+        };
+      }
+
+      function makeOfflineOpening(p) {
+        const openings = {
+          '热搜爆掉的凌晨': {
+            title: '凌晨两点十七分', scene: '出租屋 · 客厅', time: '02:17 AM', weather: '暴雨',
+            paragraphs: [
+              `手机连续震动到第十三次时，${p.name}才从沙发上坐起来。窗外暴雨吞没了城市的轮廓，屏幕上的名字却亮得刺眼——热搜第一，后面跟着一个红得发黑的“爆”字。`,
+              `偷拍视频里，${p.name}从一家私人会所的侧门出来，身后跟着刚拿下年度最佳导演的程砚。镜头刻意避开了另外三个人，也避开了那场临时安排的剧本会。`,
+              `经纪人周岚的电话终于接通：“别看评论。公司给你两条路，一是认下这段暧昧换新戏，二是发完整行程，但会得罪放消息的人。”她停了一秒，“还有第三条——你自己想。”`,
+              `作为${p.career}，${p.name}第一次如此清楚地意识到：有人想借这场热搜替自己写好第一章。天亮前，必须决定要不要夺回叙事权。`
+            ],
+            choices: [
+              { text: '公开完整行程与剧本会邀请', hint: '澄清事实，也可能得罪幕后的人' },
+              { text: '不回应绯闻，只发布试镜片段', hint: '把注意力引回专业能力' },
+              { text: '顺着热搜去联系程砚导演', hint: '先弄清对方的态度' },
+              { text: '查偷拍视频最早的发布账号', hint: '暂时沉默，追查消息源头' }
+            ]
+          },
+          '进组第一天': {
+            title: '通告单上的空白', scene: '《逆光》剧组 · 围读室', time: '08:05 AM', weather: '阴',
+            paragraphs: [
+              `${p.name}提前四十分钟到达围读室，长桌上的名牌已经摆好，唯独最末端空着一处。工作人员翻了三遍箱子，最后用黑色签字笔临时写下${p.name}的名字。`,
+              `这是${p.name}以${p.career}身份拿到的第一个正式角色：戏份不多，却与男主角有一场决定全片走向的对手戏。昨晚发来的剧本里，那场戏还在；今早的新版上却只剩一句“视现场情况调整”。`,
+              `主演贺闻舟推门进来，目光在临时名牌上停了一瞬，随后把自己的旧版剧本放到${p.name}面前：“你的那场戏很好。删掉不是导演的意思。”`,
+              `导演已经在主位落座，制片人也恰好抬头。围读即将开始，所有礼貌的沉默都在等一个人先打破。`
+            ],
+            choices: [
+              { text: '直接询问导演删戏的原因', hint: '坦率，但会把矛盾摆到台面上' },
+              { text: '先按新版围读，私下再沟通', hint: '保留体面，观察更多信息' },
+              { text: '借贺闻舟的旧剧本把原场次演出来', hint: '用表现争取存在感' },
+              { text: '把两版剧本拍给经纪人周岚', hint: '先让团队介入' }
+            ]
+          },
+          '颁奖礼后台': {
+            title: '提名之外', scene: '金鹭奖 · 后台通道', time: '07:42 PM', weather: '灯火通明',
+            paragraphs: [
+              `前台正在宣布最佳新人提名，后台的返送屏却突然黑了。${p.name}站在离登台口七步远的位置，能听见主持人念出另外四个名字，却迟迟没有听到自己的。`,
+              `作为${p.career}，${p.name}本不该出现在今晚的主桌。那部低成本电影把一个边缘角色送进提名名单，也把太多人的目光推到了这里。`,
+              `经纪人周岚匆匆走来，压低声音：“主办方说片段播错了。更麻烦的是，有人愿意立刻给你一个热搜，但条件是你等会儿在采访里暗示评审不公。”`,
+              `返送屏重新亮起，镜头正扫向后台。无论奖项归谁，${p.name}接下来的表情都会被反复播放。`
+            ],
+            choices: [
+              { text: '平静走上台侧，等完整结果', hint: '把情绪留在镜头之外' },
+              { text: '拒绝交易，要求主办方书面解释', hint: '维护原则，也会制造压力' },
+              { text: '接受采访，但只谈作品本身', hint: '争取曝光，不卷入评审争议' },
+              { text: '去找那位提出交易的人当面谈', hint: '靠近风险，也靠近真相' }
+            ]
+          },
+          '一档封闭式真人秀': {
+            title: '镜头提前开了', scene: '《合住第七天》录制屋', time: '06:30 AM', weather: '雾',
+            paragraphs: [
+              `节目组通知的开机时间是上午九点。${p.name}六点半推开合住屋的门时，玄关摄像机的红灯已经亮着。行李箱的轮子碾过木地板，屋里有人故意笑了一声。`,
+              `客厅坐着三位嘉宾，其中一个正是选秀时期与${p.name}传过不和的偶像顾遥。她端着咖啡，对镜头外问：“不是说素颜突袭吗？怎么有人妆都化好了？”`,
+              `作为${p.career}，${p.name}知道真人秀最擅长把半句话剪成一种性格。耳机里没有导演指令，只有镜头悄无声息地转向。`,
+              `茶几上放着七张房卡，最好的两间已经被拿走。顾遥旁边还空着一个位置，像邀请，也像圈套。`
+            ],
+            choices: [
+              { text: '看向镜头，坦白自己提前做了准备', hint: '真诚接招，主动定义形象' },
+              { text: '笑着反问顾遥为什么也起这么早', hint: '轻轻把问题抛回去' },
+              { text: '不接话，先选最差的房间', hint: '以行动制造第一印象' },
+              { text: '直接指出节目已经提前开机', hint: '挑战节目组的规则' }
+            ]
+          },
+          '经纪公司签约桌前': {
+            title: '第七码合同', scene: '曜石娱乐 · 会议室', time: '04:10 PM', weather: '晴',
+            paragraphs: [
+              `合同翻到第七码时，${p.name}停住了手。窗外是整座城市最昂贵的天际线，纸上的条款却写得比阴影更细：八年全约、无限续期优先权，以及一笔足够解决家里困境的预付款。`,
+              `签约总监笑着推来钢笔：“对${p.career}来说，这已经是今年最好的新人条件。今天签，下周就进组。”`,
+              `经纪人周岚一直没有说话。直到法务暂时离席，她才用指尖点了点合同背面一个不起眼的项目代号：“他们不是因为你的试镜签你，是因为这个项目缺一个能承担风险的人。”`,
+              `${p.name}想起自己的目标——${p.goal}。门外脚步声正在靠近，重新谈判的窗口也许只剩这一分钟。`
+            ],
+            choices: [
+              { text: '签下合同，先拿到入场券', hint: '立刻得到资源，也交出长期主动权' },
+              { text: '要求删除无限续期条款', hint: '第一次谈判可能决定未来八年' },
+              { text: '先问清项目代号背后的风险', hint: '延迟签约，追问真正目的' },
+              { text: '带走合同，寻找独立律师复核', hint: '稳妥，但机会可能不等人' }
+            ]
+          }
+        };
+        const opening = openings[p.opening] || openings['经纪公司签约桌前'];
+        return {
+          ...opening,
+          state_changes: { fame: 1, network: 2, pressure: 3 },
+          contacts: [{ name: '周岚', role: '经纪人', change: 1 }],
+          memory: [`${p.name}从${p.career}起步，目标是${p.goal}`, `故事从${p.opening}开始`]
+        };
+      }
+
+      function guessOfflineChanges(action) {
+        const text = String(action);
+        const changes = { fame: 2, pressure: 2 };
+        if (/表演|演技|台词|剧本|拍/.test(text)) changes.acting = 3;
+        if (/公司|经纪|团队|联系|合作/.test(text)) changes.network = 3;
+        if (/公开|微博|热搜|红毯|曝光/.test(text)) changes.fame = 5;
+        if (/稳妥|责任|作品|完整/.test(text)) changes.reputation = 3;
+        if (/答应|豪赌|抢|当面|改/.test(text)) changes.pressure = 5;
+        return changes;
+      }
+
+      function applyChanges(changes = {}) {
+        for (const key of Object.keys(statLabels)) {
+          if (Number.isFinite(Number(changes[key]))) state.stats[key] = clamp(state.stats[key] + Number(changes[key]));
+        }
+        renderStats();
+      }
+
+      function applyContacts(changes = []) {
+        changes.forEach(item => {
+          if (!item?.name) return;
+          let contact = state.contacts.find(c => c.name === item.name);
+          if (!contact) { contact = { name: escapeText(item.name), role: escapeText(item.role || '新认识的人'), relation: 0 }; state.contacts.push(contact); }
+          contact.relation = clamp(Number(contact.relation) + Number(item.change || 0), -100, 100);
+          if (item.role) contact.role = escapeText(item.role);
+        });
+        renderContacts();
+      }
+
+      function systemPrompt() {
+        const p = state.profile;
+        return `你是中文互动小说《星途》的主笔，负责续写一部虚构的娱乐圈成长小说。\n\n主角设定：\n- 姓名：${getDisplayName()}（本名：${p.name}）\n- 年龄/性别：${p.age}岁，${p.gender}\n- 外貌气质：${p.appearance}\n- 性格：${p.personality}\n- 入圈背景：${p.career}；${p.background}\n- 情感/性取向：${p.orientation}\n- 核心目标：${p.goal}\n- 文风：${p.style}\n- 节奏：${p.pace}\n- 感情线：${p.romance}\n- 避雷：${p.limits || '无额外要求'}\n\n当前状态：${JSON.stringify(state.stats)}\n关键关系：${JSON.stringify(state.contacts)}\n长期记忆：${state.memory.join('；') || '尚无'}\n\n创作规则：\n1. 所有人物、公司、节目与作品均为虚构，不使用现实明星姓名。主角始终为成年人。\n2. 紧接用户的行动推进，尊重输入，不替用户否定已做出的决定。保持人物动机、关系与伏笔连续。\n3. 每次写 4—6 个自然段，约 650—1000 个汉字，像小说正文，有动作、对话、细节与潜台词；不要总结、不要说教、不要称呼“玩家”。\n4. 结尾停在需要抉择的节点，给 4 个彼此有明显取舍的选项；不要提前揭示选项必然后果。\n5. 数值变化每项限制在 -8 到 +8，没有变化可省略。压力越高越危险；其他数值越高越有利。\n6. 新增或变化的关键人物放入 contacts。change 为本次关系变化，-8 到 +8。\n7. 只输出一个可解析的 JSON 对象，不要 Markdown、代码块或额外说明。格式：\n{"title":"章节名","scene":"地点","time":"时间","weather":"天气或氛围","paragraphs":["段落1","段落2"],"choices":[{"text":"选项","hint":"不剧透的倾向提示"}],"state_changes":{"fame":0,"acting":0,"network":0,"reputation":0,"pressure":0,"wealth":0},"contacts":[{"name":"姓名","role":"身份","change":0}],"memory":["本章新增的重要事实"]}`;
+      }
+
+      async function generateWithApi(action) {
+        const recent = state.chapters.slice(-5).map(ch => ({
+          title: ch.title,
+          action: ch.action,
+          paragraphs: ch.paragraphs.slice(-2),
+          choices: ch.choices.map(c => c.text)
+        }));
+        const userMessage = state.chapter === 0
+          ? `从“${state.profile.opening}”开始第一章。开场要迅速出现人物、目标与具体矛盾。`
+          : `已发生的最近剧情：${JSON.stringify(recent)}\n主角现在的行动/台词是：“${action}”。从这一刻紧接着续写下一章。`;
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (state.api.key) headers.Authorization = `Bearer ${state.api.key}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        try {
+          const response = await fetch(`${normalizeBase(state.api.base)}/chat/completions`, {
+            method: 'POST', headers, signal: controller.signal,
+            body: JSON.stringify({
+              model: state.api.model,
+              temperature: state.api.temperature,
+              messages: [
+                { role: 'system', content: systemPrompt() },
+                { role: 'user', content: userMessage }
+              ]
+            })
+          });
+          const raw = await response.text();
+          if (!response.ok) throw new Error(readApiError(raw) || `接口返回 HTTP ${response.status}`);
+          let payload;
+          try { payload = JSON.parse(raw); } catch (_) { throw new Error('接口没有返回有效 JSON'); }
+          const content = payload?.choices?.[0]?.message?.content ?? payload?.choices?.[0]?.text ?? payload?.output_text;
+          if (!content) throw new Error('模型没有返回剧情内容');
+          return parseModelJson(content);
+        } catch (error) {
+          if (error.name === 'AbortError') throw new Error('请求超时，请稍后重试或更换模型');
+          throw error;
+        } finally { clearTimeout(timeout); }
+      }
+
+      function parseModelJson(content) {
+        if (typeof content === 'object') return content;
+        let text = String(content).trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+        try { return JSON.parse(text); } catch (_) {
+          const start = text.indexOf('{'); const end = text.lastIndexOf('}');
+          if (start >= 0 && end > start) {
+            try { return JSON.parse(text.slice(start, end + 1)); } catch (__) {}
+          }
+          throw new Error('模型返回的剧情格式无法解析，请重试或换一个模型');
+        }
+      }
+
+      function readApiError(raw) {
+        try {
+          const data = JSON.parse(raw);
+          return data?.error?.message || data?.message || '';
+        } catch (_) { return String(raw || '').slice(0, 180); }
+      }
+
+      function friendlyApiError(error) {
+        const message = error?.message || String(error);
+        if (/Failed to fetch|NetworkError|Load failed/i.test(message)) return '无法连接接口。请检查地址、网络，以及服务商是否允许浏览器跨域访问。';
+        if (/401|key|unauthorized|认证/i.test(message)) return `认证失败：${message}`;
+        return message;
+      }
+
+      function saveGame(notify = true) {
+        if (!state.profile) return;
+        const snapshot = currentSnapshot();
+        try {
+          localStorage.setItem(STORAGE_GAME, JSON.stringify(snapshot));
+          updateSaveStatus(snapshot.savedAt);
+          if (notify) toast('进度已保存在这台设备上');
+        } catch (_) { if (notify) toast('浏览器未允许保存进度', 'error'); }
+      }
+
+      function restoreGame() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_GAME) || 'null');
+          if (!saved?.profile || !saved?.chapters?.length) return false;
+          Object.assign(state, {
+            profile: saved.profile,
+            chapter: saved.chapter || saved.chapters.length,
+            stats: { ...state.stats, ...saved.stats },
+            contacts: saved.contacts || state.contacts,
+            chapters: saved.chapters,
+            memory: saved.memory || []
+          });
+          showGame();
+          $('#storyStream').replaceChildren();
+          state.chapters.forEach(ch => renderChapter(ch));
+          renderChoices(state.chapters.at(-1).choices);
+          const last = state.chapters.at(-1);
+          $('#sceneMeta').textContent = `${last.scene} · ${last.time}`;
+          renderRail(last); renderChapterDirectory(); updateSaveStatus(saved.savedAt || new Date().toISOString());
+          toast('已恢复上次进度');
+          return true;
+        } catch (_) { return false; }
+      }
+
+      function fillForm(profile) {
+        if (!profile) return;
+        const ids = ['name','stageName','gender','age','orientation','career','appearance','personality','background','goal','opening','style','romance','limits'];
+        ids.forEach(key => {
+          const map = { name: 'charName' };
+          const el = $(`#${map[key] || key}`);
+          if (el && profile[key] != null) el.value = profile[key];
+        });
+        const pace = $(`input[name="pace"][value="${CSS.escape(profile.pace || '张弛有度')}"]`);
+        if (pace) pace.checked = true;
+        syncSetupPreview();
+      }
+
+      function openApi() {
+        $('#apiDrawer').classList.add('open'); $('#apiDrawer').setAttribute('aria-hidden', 'false'); $('#backdrop').classList.add('open');
+        setTimeout(() => $('#apiBase').focus(), 50);
+      }
+      function closeApi() { $('#apiDrawer').classList.remove('open'); $('#apiDrawer').setAttribute('aria-hidden', 'true'); if (!$('#gameToolsDrawer').classList.contains('open') && !$('#dossier').classList.contains('open')) $('#backdrop').classList.remove('open'); $('#apiBtn').focus(); }
+      function hashCode(text) { return [...String(text)].reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0); }
+
+      $('#profileForm').addEventListener('submit', startGame);
+      $('#sendBtn').addEventListener('click', () => continueStory($('#customInput').value));
+      $('#customInput').addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); continueStory(event.currentTarget.value); }
+      });
+      $('#personalityTags').addEventListener('click', event => {
+        const tag = event.target.closest('.tag'); if (!tag) return;
+        const active = tag.getAttribute('aria-pressed') === 'true'; tag.setAttribute('aria-pressed', String(!active));
+        const input = $('#personality');
+        const values = input.value.split(/[，,]/).map(v => v.trim()).filter(Boolean);
+        if (!active && !values.includes(tag.textContent)) values.push(tag.textContent);
+        if (active) values.splice(values.indexOf(tag.textContent), 1);
+        input.value = values.join('，');
+        syncSetupPreview();
+      });
+      ['input','change'].forEach(type => $('#profileForm').addEventListener(type, syncSetupPreview));
+      $('#gameToolsBtn').addEventListener('click', () => openGameTools());
+      $('#closeGameToolsBtn').addEventListener('click', closeGameTools);
+      $('#railDirectoryBtn').addEventListener('click', () => openGameTools('directory'));
+      $('#railReaderBtn').addEventListener('click', () => openGameTools('reader'));
+      $('#railExportBtn').addEventListener('click', exportSave);
+      $('#jumpLatestBtn').addEventListener('click', () => state.chapter && document.getElementById(`chapter-${state.chapter}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      $('#exportSaveBtn').addEventListener('click', exportSave);
+      $('#importSaveBtn').addEventListener('click', () => $('#importSaveInput').click());
+      $('#importSaveInput').addEventListener('change', e => importSaveFile(e.target.files?.[0]));
+      $('#readerWidth').addEventListener('input', e => applyReaderSettings({ width: Number(e.target.value), font: Number($('#readerFont').value), line: Number($('#readerLine').value) }));
+      $('#readerFont').addEventListener('input', e => applyReaderSettings({ width: Number($('#readerWidth').value), font: Number(e.target.value), line: Number($('#readerLine').value) }));
+      $('#readerLine').addEventListener('input', e => applyReaderSettings({ width: Number($('#readerWidth').value), font: Number($('#readerFont').value), line: Number(e.target.value) }));
+      $('#resetReaderBtn').addEventListener('click', () => { applyReaderSettings(readerDefaults); toast('阅读设置已恢复默认'); });
+
+      $('#apiBtn').addEventListener('click', openApi);
+      $('#setupApiBtn').addEventListener('click', openApi);
+      $('#closeApiBtn').addEventListener('click', closeApi);
+      $('#backdrop').addEventListener('click', () => { if ($('#apiDrawer').classList.contains('open')) closeApi(); closeGameTools(); $('#dossier').classList.remove('open'); $('#backdrop').classList.remove('open'); });
+      $('#saveApiBtn').addEventListener('click', saveApi);
+      $('#fetchModelsBtn').addEventListener('click', fetchModels);
+      $('#temperature').addEventListener('input', e => $('#temperatureValue').textContent = Number(e.target.value).toFixed(2));
+      $('#clearApiBtn').addEventListener('click', () => {
+        state.api = { base: 'https://api.openai.com/v1', key: '', model: 'gpt-4o-mini', temperature: 0.9, rememberKey: false };
+        localStorage.removeItem(STORAGE_API); loadApi(); toast('API 配置已清除');
+      });
+      $('#saveBtn').addEventListener('click', () => saveGame(true));
+      $('#newGameBtn').addEventListener('click', () => $('#confirmModal').classList.add('open'));
+      $('#cancelNewBtn').addEventListener('click', () => $('#confirmModal').classList.remove('open'));
+      $('#confirmNewBtn').addEventListener('click', () => {
+        $('#confirmModal').classList.remove('open'); fillForm(state.profile);
+        $('#gameView').classList.remove('active'); $('#setupView').hidden = false;
+        $('#saveBtn').hidden = true; $('#newGameBtn').hidden = true; $('#gameToolsBtn').hidden = true; $('#saveStatus').hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      $('#dossierBtn').addEventListener('click', () => {
+        $('#dossier').classList.toggle('open'); $('#backdrop').classList.toggle('open', $('#dossier').classList.contains('open'));
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') { if ($('#apiDrawer').classList.contains('open')) closeApi(); closeGameTools(); $('#confirmModal').classList.remove('open'); $('#dossier').classList.remove('open'); $('#backdrop').classList.remove('open'); }
+      });
+
+      loadApi();
+      loadReaderSettings();
+      syncSetupPreview();
+      const hasSave = localStorage.getItem(STORAGE_GAME);
+      if (hasSave) {
+        const restore = document.createElement('button');
+        restore.type = 'button'; restore.className = 'btn'; restore.style.cssText = 'width:100%;margin-top:8px'; restore.textContent = '继续上次故事';
+        restore.addEventListener('click', restoreGame); $('#startBtn').after(restore);
+      }
+    })();
+  </script>
+
+
+</body></html>
